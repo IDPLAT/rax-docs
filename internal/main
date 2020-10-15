@@ -280,7 +280,7 @@ function install_clean_up_old_files {
 # and cleanup of old files. Notably, the configuration file should already be set, and the toolkit repo
 # must have been cloned already, or we wouldn't be here.
 function install_go {
-    cp .rax-docs/repo/Jenkinsfile .
+    cp .rax-docs/repo/resources/Jenkinsfile .
     IGNORE="# Ignore rax-docs installation. It should be pulled with './rax-docs get' when needed.\n.rax-docs/repo\n"
     IGNORE+="# Ignore rax-docs cache dir, where info specific to the local installation is stored.\n.rax-docs/cache"
     if [ -f .gitignore ]; then
@@ -349,6 +349,61 @@ function inspect_old_jenkinsfile {
 
 # Sets up the tools environment, either in Jenkins or for a dev.
 function setup {
+    if [ -n "$JENKINS_URL" ]; then
+	setup_jenkins
+    else
+	setup_user
+    fi
+    # Always succeed here. Let the lower-level setup functions fail when they want to.
+    return 0
+}
+
+# Activates the build environment in Jenkins. This requires setup_jenkins to have run already, and it
+# takes the appropriate steps to make all the tools active that were installed by that function. This
+# is useful when a new stage of the build needs to use some of the installed tools because each
+# pipeline stage starts with a fresh environment.
+function activate_jenkins_env {
+    # shellcheck disable=SC1091
+    source /opt/rh/python27/enable || fail "Couldn't enable RHSCL Python 2.7"
+    # shellcheck disable=SC1091
+    source jenkinspy2/bin/activate || fail "Couldn't activate the venv"
+    PATH="$(pwd)/docs/bin:$PATH"
+    export PATH
+}
+
+# Sets up the Jenkins environment. This is heavily dependent on the Jenkins server where it's running and interdependent
+# with the Jenkinsfile that must, unfortunately, be part of each docs project. That defines the build stages. Expect this
+# sequence of calls:
+# - setup
+# - test
+# - publish (only upon PR merge)
+function setup_jenkins {
+    echo "Setting up Jenkins build environment"
+    echo ""
+    # shellcheck disable=SC1091
+    source /opt/rh/python27/enable || fail "Couldn't enable RHSCL Python 2.7"
+    virtualenv jenkinspy2 || fail "Couldn't create the venv to contain this build"
+    # shellcheck disable=SC1091
+    source jenkinspy2/bin/activate || fail "Couldn't activate the new venv"
+    python -V
+    # This is the latest version of pip that still works with python 2.7. Can't go any further until this moves to 3.
+    pip install --upgrade pip\<21 || fail "Couldn't upgrade pip to latest version"
+    pip install -r requirements.txt || fail "Couldn't install requirements"
+    echo ""
+
+    echo "Install vale style checker"
+    # We don't have privileges outside the Jenkins workspace, so we just install the vale script to docs/bin
+    # and the styles to docs/styles. They'll be reinstalled for every new build.
+    wget https://install.goreleaser.com/github.com/ValeLint/vale.sh || fail "Couldn't download Vale script"
+    sh vale.sh -b docs/bin v2.4.0 || fail "Couldn't run Vale installer"
+    mkdir -p docs/styles/Vocab
+    git clone https://github.com/achatur/docs-vale.git docs/styles/docs-vale || fail "Couldn't get local styles"
+    git clone https://github.com/errata-ai/Google.git docs/styles/Google || fail "Couldn't get Google styles"
+    git clone https://github.com/errata-ai/Microsoft.git docs/styles/Microsoft || fail "Couldn't get MS styles"
+    echo ""
+}
+
+function setup_user {
     echo "Setting up local dev environment"
     echo ""
     docker rmi rax-docs:latest > /dev/null 2>&1 || true
@@ -382,6 +437,12 @@ function html {
 
 function testy {
     docker_make test
+}
+
+# Publishes the docs for Jenkins or for a dev.
+function publish {
+    [ -n "$JENKINS_URL" ] && activate_jenkins_env
+    echo "where does publish live? in docker? or just here, like it is in fe lambda?"
 }
 
 function usage {

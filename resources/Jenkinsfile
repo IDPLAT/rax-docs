@@ -1,0 +1,46 @@
+#!/usr/bin/env groovy
+node {
+
+    load '.rax-docs/config/groovy'
+
+    /**
+     * The branch to check out when cloning. It depends on whether this is a PR or not.
+     */
+    def cloneBranch = env.CHANGE_BRANCH ?: env.BRANCH_NAME
+
+    /**
+     * True if this is a PR build.
+     */
+    def isPr = !env.CHANGE_BRANCH.isEmpty()
+
+    stage ('Gather intel') {
+        sh 'lsb_release -a'
+        sh 'ls -la /opt/rh'
+        sh 'git --version || echo no git'
+        sh 'python --version || echo no python'
+        sh 'python2 --version || echo no python2'
+        sh 'python3 --version || echo no python3'
+        sh 'enchant -v || echo no enchant'
+    }
+    stage('Check it out') {
+        deleteDir()
+        echo "checking out $cloneBranch"
+        git branch: cloneBranch, credentialsId: 'githubSvc', url: env.GIT_CLONE_URL
+        sh 'git log -1'
+    }
+    stage('Set up build environment') {
+        sh './rax-docs setup'
+    }
+    stage('Test') {
+        sh './rax-docs test'
+    }
+    if (isPr) {
+        stage("PR stuff") {
+            echo "Should this be inline or in the toolkit? That's a dumb question. Everything to the toolkit!"
+        }
+    } else {
+        stage("Release stuff") {
+            sh './rax-docs publish'
+        }
+    }
+}
