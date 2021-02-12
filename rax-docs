@@ -1,0 +1,134 @@
+#!/bin/bash -e
+
+## This is a script to build docs projects started from the Docs Starter Kit.
+## This is just a brief shim that relies on having the full repository installed in a project
+## to function. This script handles that installation, and it passes other commands through to
+## the underlying installation afterward.
+##
+## General rules:
+## - CLI Commands map to function names. It either matches an allowed function in this script,
+##   or it gets passed to the internal script.
+## - Error handling is explicit. If some condition should cause failure, use "|| { failure stuff }"
+##   to do so. The bash -e flag is set as a precaution, but its behavior is somewhat unreliable
+##   when you need precision.
+## - Functions and the internal script(s) signal a fatal error to this script with exit code 1.
+##   They signal a user abort with exit code 2.
+## - Submodules are messy and impossible to fully remove once added to a repo; therefore I'm
+##   avoiding them for now.
+## - This wrapper script should be as foolproof as possible because it's intended to be
+##   distributed into all of the docs projects, and finding and updating all the copies of it
+##   will be difficult. This is exactly the problem that this independent toolkit is trying to
+##   solve for all of the docs projects out there.
+
+export RAX_DOCS_WRAPPER_VERSION=1
+SCRIPTNAME=$(basename "$0")
+
+## Perform a fresh install of the toolkit. This can be a first-time install, or it could be
+## installing over itself. Installing over an installation should always work.
+function install {
+    echo "Welcome to the rax-docs toolkit."
+    echo ""
+    mkdir -p .rax-docs
+    rm -rf .rax-docs/repo
+    cloneish || {
+        echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
+        echo ""
+        echo "$OUTPUT"
+        exit 1
+    }
+    .rax-docs/repo/internal/main internal_install "$@"
+}
+
+# Clones the toolkit repo, or obtains it from a local repo directory. If SOURCE_DIR is set,
+# it copies that directory. Otherwise, it clones from github. Stores the output of the command
+# in OUTPUT for use in error messages. Copying from a local source directory is meant primarily
+# for ease of testing.
+function cloneish {
+    [ -n "$SOURCE_DIR" ] && CMD=(cp -r "$SOURCE_DIR" .rax-docs/repo)
+    [ -z "$SOURCE_DIR" ] && CMD=(git clone git@github.rackspace.com:dcx/rax-docs.git .rax-docs/repo)
+    OUTPUT=$("${CMD[@]}" 2>&1)
+}
+
+## Get the installed toolkit version. This is for when the toolkit has been installed in a
+## project, but you, a team member, or Jenkins is working from a different clone of the repo.
+## Using the configuration added during installation, this will download the right version of
+## the toolkit repo so that docs can be built and tested.
+function get {
+    [ ! -f .rax-docs/config/bash ] && {
+	echo "The config file .rax-docs/config/bash is missing."
+	echo ""
+	echo "Try installing the toolkit with '$SCRIPTNAME install <version>'."
+	return 1
+    }
+    # shellcheck disable=SC1091
+    source .rax-docs/config/bash || {
+	echo ""
+	echo "Failed to source the config file."
+	return 1
+    }
+    rm -rf .rax-docs/repo
+    cloneish || {
+	echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
+	echo ""
+	echo "$OUTPUT"
+	return 1
+    }
+    OUTPUT=$(git -C .rax-docs/repo checkout "$TOOLKIT_VERSION" 2>&1) || {
+	echo "Error checking out configured version."
+	echo ""
+	echo "The TOOLKIT_VERSION specified in your config may name a git treeish that"
+	echo "doesn't exist anymore, or else something else bad happened."
+	echo ""
+	echo "$OUTPUT"
+	return 1
+    }
+    echo "Got toolkit version $TOOLKIT_VERSION"
+}
+
+function tools_check {
+    [ -f .rax-docs/config/bash ] && [ ! -d .rax-docs/repo ] && {
+	echo "The toolkit is configured but not present."
+	echo ""
+	echo "Try running '$SCRIPTNAME get', and then try again."
+	return 1
+    }
+    [ -d .rax-docs/repo ] || {
+	echo "The toolkit hasn't been installed in this project."
+	echo ""
+	echo "Try running '$SCRIPTNAME install <version>'."
+	return 1
+    }
+}
+
+[ $# -eq 0 ] && {
+    echo "Try '$SCRIPTNAME install' to install the toolkit."
+    echo "For additional information, see the readme at"
+    echo "https://github.rackspace.com/dcx/rax-docs"
+    exit 1
+}
+
+TOPCMD="$1"
+shift
+
+# Keep track of function exits/returns to deal with them correctly.
+EXIT=0
+case $TOPCMD in
+    install|get)
+	$TOPCMD "$@" || EXIT=$?
+	;;
+
+    *)
+	tools_check || EXIT=$?
+	[ $EXIT -eq 0 ] && .rax-docs/repo/internal/main "$TOPCMD" "$@" || EXIT=$?
+	;;
+esac
+
+RESULT="ended badly"
+[ $EXIT -eq 0 ] && RESULT="completed"
+[ $EXIT -eq 1 ] && RESULT="failed"
+[ $EXIT -eq 2 ] && RESULT="completed" && EXIT=0
+
+echo ""
+echo "$TOPCMD command $RESULT"
+
+exit $EXIT
