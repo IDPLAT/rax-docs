@@ -52,8 +52,8 @@ command to get the script.)
  ```
  chmod +x rax-docs
     ./rax-docs install <version>
-    ```
-   
+ ```
+
 1. Commit the changes it made, including the `rax-docs` script and
 config files. Do NOT commit the cloned repository. If it removed
 files, those are part of the old toolkit and shouldn't be needed
@@ -170,10 +170,15 @@ to begin using immediately.
 Being stable while changing
 ---------------------------
 
-During installation, you can select a toolkit version. This allows for implicit
-version pinning, allowing for local and org-wide app stability. That version of 
-the toolkit will always be used for that project until a new version is explicitly
-installed.
+During installation, you can select a toolkit version. This allows for version 
+pinning; the version you select will always be used for your project until a new
+version is explicitly installed.
+
+The reason for this version pinning is simple: the toolkit can be updated with 
+bugfixes and new features over time. If each change was automatically pulled 
+in by every project using it, those projects could potentially break at any time,
+which would be frustrating for users. Having users manually update their 
+toolkits ensures project stability, and the ability to verify upgrades at their own pace.
 
 The toolkit periodically notifies users of new versions to encourage upgrades.
 Release versions of the toolkit are indicated by annotated git tags. Annotating
@@ -191,8 +196,6 @@ These should only be used for testing.
 readability. Tests shouldn't need to wait for these pauses, so set this to
 `true` for faster results.
 
-`SOURCE_DIR`: During tests, devs are advised to clone the source repo 
-into a local directory instead of continually downloading it from Github.
-Set this variable to the path of the cloned repo. This speeds up tests, 
-and also allows for testing local toolkit changes without having to 
-commit and push them.
+`SOURCE_DIR`: Set this variable to the path of the cloned repo. This 
+speeds up tests, and also allows for testing local toolkit changes 
+without having to commit and push them.
