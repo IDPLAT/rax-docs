@@ -42,9 +42,10 @@ and changing some files. In case things go wrong or you change your
 mind, you'll use git to undo the changes, so you don't want other
 things in the way.
 
-1. Create a file in your project named `rax-docs`, and add the content
-from https://github.com/IDPLAT/rax-docs/blob/master/rax-docs
-to it. (GH Enterprise authentication means I can't make a simple wget
+1. Create a file in your project named `rax-docs`, and add the
+[content of the rax-docs
+script](https://github.com/IDPLAT/rax-docs/blob/master/rax-docs) to
+it. (GH Enterprise authentication means I can't make a simple wget
 command to get the script.)
 
 1. Install it. Find the [release](https://github.com/IDPLAT/rax-docs/releases) you want and use that as the version to install:
@@ -76,44 +77,35 @@ Using it
 
 After obtaining the toolkit via either `install`ing or `get`ting it,
 you have to run `./rax-docs setup` to build your local dev
-environment. This builds a Docker image locally to act as an isolated
+environment. This builds a local Docker image to act as an isolated
 environment.
 
-This toolkit is meant to feel very similar to the original. In general, 
-anything you used to run with `make` is now run with `./rax-docs` 
-instead. For example,
+After the initial setup, the following commands are available.
 
-```
-make html
-```
+`rax-docs html`: builds the HTML version of your docs for local review
 
-is now
+`rax-docs test`: runs all tests on your docs
 
-```
-./rax-docs html
-```
+`rax-docs htmlvers`: builds multi-versioned HTML docs based on all
+existing branches; you can switch versions with a control in the
+bottom left of the page in your browser
 
-and likewise,
-
-```
-make test
-```
-
-is now
-
-```
-./rax-docs test
-```
+This toolkit is meant to feel very similar to the original tooling
+distributed with the Starter Kit. In general, anything you used to run
+with `make` is now run with `./rax-docs` instead.
 
 How it works
 ============
 
-The goal of this toolkit is to make one tool that everyone can use to
-maintain docs and that can be centrally upgraded and easily
-distributed to all the docs projects when something needs to be
-changed or fixed.
+The goal of this toolkit is to create a centrally upgradeable and
+easily distributed set of tools that everyone can use to maintain
+docs. The power of the toolkit lies in its ability to push changes out
+to all users when something needs to be changed or fixed. This is
+counter to the old set of decentralized tools which require users to
+make changes to their docs projects when things break or upgrades need
+to be made.
 
-Its design flows out from that goal.
+The toolkit's design flows out from that goal.
 
 The wrapper script
 ------------------
@@ -123,7 +115,7 @@ toolkit interface for users. It's how users install the toolkit internals,
 as well as how they run commands to build, test, and publish their 
 docs. Build automaters such as Jenkins will also use it this way.
 
-This wrapper script is the part of the project that is distributed
+`rax-docs` is the part of the project that is distributed
 with all projects. This makes it the most difficult tool element to 
 update; therefore, it must be as robust, simple, and, ideally, static as
 possible.
@@ -161,24 +153,25 @@ need to be committed to the project that's using it. `.rax-docs/repo` contains
 the cloned toolkit internals, and `.rax-docs/cache` contains temporary local 
 data; these should not be committed, and are therefore in .gitignore.
 
-Once the toolkit is installed and committed to a project, anyone
-cloning the project will have the wrapper script, but be missing the
-cloned repository (see [Installing](Installing)).  Based on the toolkit configuration stored in
-`.rax-docs`, the wrapper knows how to retrieve the right version of the toolkit
-to begin using immediately.
+After you install the toolkit and commit its files to your project,
+anyone can clone your project and use the toolkit to build it. They
+just have to run `./rax-docs get` to fetch the main toolkit files once
+on their local machine. Based on the toolkit configuration stored in
+`.rax-docs`, the wrapper knows how to retrieve the right version of
+the toolkit to begin using it immediately.
 
 Being stable while changing
 ---------------------------
 
 During installation, you can select a toolkit version. This allows for version 
-pinning; the version you select will always be used for your project until a new
+pinning; the version you select is always used for your project until a new
 version is explicitly installed.
 
 The reason for this version pinning is simple: the toolkit can be updated with 
 bugfixes and new features over time. If each change was automatically pulled 
 in by every project using it, those projects could potentially break at any time,
 which would be frustrating for users. Having users manually update their 
-toolkits ensures project stability, and the ability to verify upgrades at their own pace.
+toolkits ensures project stability and the ability to verify upgrades at their own pace.
 
 The toolkit periodically notifies users of new versions to encourage upgrades.
 Release versions of the toolkit are indicated by annotated git tags. Annotating
@@ -187,15 +180,14 @@ makes it easy to analyze them with commands like `git describe`.
 Testing and debugging
 =====================
 
-There are bats tests for the script. For easier testing, there are a few 
-environment variables you can set to alter the script's behavior slightly.
+There are bats tests for the main project scripts. When tests fail,
+inspecting the output contained in the `$output` var is often
+useful. Since the project is bash, you can add a `set +x` to any
+function or script to get debug output on the command line.
 
-These should only be used for testing.
+In addition, the following environment variables are useful during
+testing.
 
 `SPEED`: By default, there are some pauses during output for human
 readability. Tests shouldn't need to wait for these pauses, so set this to
 `true` for faster results.
-
-`SOURCE_DIR`: Set this variable to the path of the cloned repo. This 
-speeds up tests, and also allows for testing local toolkit changes 
-without having to commit and push them.
