@@ -1,0 +1,351 @@
+#!/bin/bash -e
+
+## Delay output a bit to make it feel more comfortable for a human. Setting SPEED=true will disable
+## the delay so tests will run quickly.
+function pause {
+    [ "$SPEED" = true ] || sleep 1
+}
+
+# Versioning the wrapper and internal script gives some future-proofing so that a new wrapper script coudld be written,
+# and we could still support both the old and new versions.
+[ "$RAX_DOCS_WRAPPER_VERSION" = "1" ] || {
+    echo "This script is meant to work with version 1 of the wrapper script."
+    echo ""
+    pause
+    exit 1
+}
+
+# Helper function to make failures consistent. Pass a message, and this will write it to stderr and exit appropriately.
+SCRIPTNAME="$(basename "$0")"
+function fail {
+    echo -e "$SCRIPTNAME: Fatal: $1" 1>&2
+    exit 1
+}
+
+# Called by wrapper script install after it clones the project. The wrapper is the script downloaded by users.
+# It's kept as minimal as possible so that it's small and doesn't change often. Most of the logic is in here.
+# This function installs the toolkit in the current directory. The version being installed is what has already
+# been cloned. The version is passed here only for record-keeping.
+function internal_install {
+    # version is passed from the outer script
+    CHOSEN_VERSION="$1"
+    install_status_check
+}
+
+# Checks for dirty working tree. Installation can proceed, but user is prompted to abort and clean up first. The wrapper script
+# and the install directory are excluded from the check.
+function install_status_check {
+    # If we're not in a git repo, ignore this part
+    git rev-parse &> /dev/null && {
+	STATUS=$(git status --porcelain | grep -v '^.. rax-docs$' | grep -v '^.. \.rax-docs/' | grep -v '^.. \.gitmodules$' || true)
+	[ "$STATUS" = "" ] || {
+	    echo "You have uncommitted changes!"
+	    echo ""
+            echo "I *STRONGLY RECOMMEND* that you commit all of your local changes before proceeding."
+            echo "This script makes changes to files in this directory that will need to be committed,"
+            echo "and the only way of rolling back is with git. Other changes may interfere, get"
+            echo "overwritten, and make it difficult to recover if the installation fails."
+            echo ""
+            echo "You have been warned."
+            echo ""
+	    pause
+            read -rp "Are you ABSOLUTELY SURE you want to install without committing your other changes? [y/N] " CONFIRM
+	    [ "$CONFIRM" = "y" ] && {
+		echo ""
+		echo "On your own head be it."
+		echo ""
+		pause
+            }
+	    [ "$CONFIRM" = "y" ] || {
+		echo ""
+		echo "A wise choice, young padawan."
+		rm -rf .rax-docs
+		pause
+		return 2
+            }
+	}
+    }
+    install_version_set
+}
+
+# After the toolkit is cloned, this checks out the version selected by the user and resolves it
+# to a version that can be stored in the config, if necessary.
+function install_version_set {
+    [ -z "$CHOSEN_VERSION" ] && {
+	echo "Installing latest toolkit. This will use the latest master, which SHOULD be stable;"
+	echo "however, it's usually better to stick to tagged release versions. If you continue,"
+	echo "your installation will then be pinned to the current master commit and WILL NOT update"
+	echo "along with the branch. That would introduce crazy instability."
+	echo ""
+	echo "You can specify a version to install with 'install <version>'."
+	echo ""
+	pause
+	read -rp "Are you sure you want to install latest? [Y/n] " CONFIRM
+	CONFIRM="${CONFIRM:-y}"
+	[ "$CONFIRM" = "y" ] && {
+	    CHOSEN_VERSION=master
+	    DISCOVER_VERSION=true
+	}
+	[ "$CONFIRM" = "y" ] || {
+	    echo ""
+	    echo "Not installing latest."
+	    rm -rf .rax-docs
+	    exit 2
+	}
+    }
+    [ -z "$CHOSEN_VERSION" ] || {
+	echo "Installing toolkit version $CHOSEN_VERSION."
+	DISCOVER_VERSION=false
+    }
+    echo ""
+    OUTPUT=$(git -C .rax-docs/repo checkout "$CHOSEN_VERSION" 2>&1) || {
+	fail "Error checking out toolkit version:\n\n$OUTPUT"
+    }
+    # Don't store a branch as the version. That would lead to non-reproducible builds due to
+    # building based on a moving target version.
+    git -C .rax-docs/repo show-ref --verify "refs/heads/$CHOSEN_VERSION" &> /dev/null && {
+	DISCOVER_VERSION=true
+    }
+    # If we need to pin the version, get the commit hash of HEAD
+    [ "$DISCOVER_VERSION" = true ] && INSTALLED_VERSION=$(git -C .rax-docs/repo rev-parse HEAD)
+    [ "$DISCOVER_VERSION" = true ] || INSTALLED_VERSION=$CHOSEN_VERSION
+    echo "Installed toolkit to .rax-docs/repo"
+    echo "Version: $INSTALLED_VERSION"
+    echo ""
+    pause
+    install_configure
+}
+
+# Tries to discover correct config settings.
+function install_configure {
+    CONFIGURED=false
+    [ -f .rax-docs/config/bash ] && {
+	echo "Loading config from config file at .rax-docs/config/bash."
+	echo ""
+	# Watch out: sourcing a config will load a TOOLKIT_VERSION which may differ from the
+	# CHOSEN_VERSION and INSTALLED_VERSION
+	# shellcheck disable=SC1091
+	source .rax-docs/config/bash || fail "Failed to source config file: .rax-docs/config/bash"
+	CONFIGURED=true
+    }
+    [ "$CONFIGURED" = false ] && [ -f Jenkinsfile ] && {
+	inspect_old_jenkinsfile || fail "Inspecting Jenkinsfile failed"
+	CONFIGURED=true
+    }
+    pause
+    install_verify_config
+}
+
+# Verifies config settings with user. User can input/override settings here.
+# After this function, the variables all have trusted values.
+function install_verify_config {
+    echo "Verify or enter the following details about your project."
+    [ -n "$GITHUB_ORG" ] && {
+	read -rp "Github organization will be '$GITHUB_ORG'. Press Enter to accept, or enter new org: " ANSWER
+	[ -z "$ANSWER" ] || GITHUB_ORG="$ANSWER"
+    }
+    [ -n "$GITHUB_ORG" ] || {
+	read -rp "Enter Github organization: " GITHUB_ORG
+    }
+    [ -n "$GITHUB_REPO" ] && {
+	read -rp "Github repository name will be '$GITHUB_REPO'. Press Enter to accept, or enter new name: " ANSWER
+	[ -z "$ANSWER" ] || GITHUB_REPO="$ANSWER"
+    }
+    [ -n "$GITHUB_REPO" ] || {
+	read -rp "Enter Github repository name: " GITHUB_REPO
+    }
+    echo ""
+    GIT_CLONE_URL="git@github.rackspace.com:$GITHUB_ORG/$GITHUB_REPO.git"
+    echo "Clone URL will be $GIT_CLONE_URL"
+    read -rp "Press Enter to accept, or enter new URL: " ANSWER
+    [ -z "$ANSWER" ] || GIT_CLONE_URL="$ANSWER"
+    echo ""
+    echo "Project settings:"
+    echo "Github org: $GITHUB_ORG"
+    echo "Repo name : $GITHUB_REPO"
+    echo "Clone url : $GIT_CLONE_URL"
+    echo ""
+    pause
+    read -rp "Proceed with these project settings? [Y/n] " ANSWER
+    echo ""
+    ANSWER="${ANSWER:-y}"
+    [ "$ANSWER" = "y" ] || {
+	echo "Halting installation."
+	rm -rf .rax-docs
+	return 2
+    }
+    mkdir -p .rax-docs/config
+    cat <<EOF > .rax-docs/config/bash
+GITHUB_ORG="$GITHUB_ORG"
+GITHUB_REPO="$GITHUB_REPO"
+GIT_CLONE_URL="$GIT_CLONE_URL"
+TOOLKIT_VERSION="$INSTALLED_VERSION"
+EOF
+    sed 's/^/env./' > .rax-docs/config/groovy < .rax-docs/config/bash
+    install_check_old_files
+}
+
+# Tries to identify if any files from the docs starter kit are present. If so, it triggers cleaning
+# them up. If not, it just goes on with the installation.
+function install_check_old_files {
+    # If a docs project has all of these files, it's probably from the starter kit
+    SIGNATURE_FILES=(
+	Jenkinsfile
+	Makefile
+	docs/Makefile
+	tox.ini
+    )
+    SIGNATURE_MATCH=true
+    for F in "${SIGNATURE_FILES[@]}"; do
+	[ -f "$F" ] || SIGNATURE_MATCH=false
+    done
+
+    # To be extra sure, check for known Jenkins env-related commands in some of the build files.
+    [ $SIGNATURE_MATCH = true ] && {
+	SIGNATURE_PATTERNS=(
+	    "source /opt/rh/rh-git29/enable"
+	    "source jenkinspy2/bin/activate"
+	)
+	for P in "${SIGNATURE_PATTERNS[@]}"; do
+	    grep "$P" Jenkinsfile &> /dev/null ||
+		grep "$P" build.sh &> /dev/null ||
+		grep "$P" scripts/build.sh &> /dev/null ||
+		SIGNATURE_MATCH=false
+	done
+    }
+
+    # If we made it this far without finding something that doesn't match, double check with the
+    # user, and then clean up all the old stuff.
+    [ $SIGNATURE_MATCH = true ] && {
+	echo "Files found from original toolkit. If you proceed, those files will be removed."
+	echo "This toolkit replaces them. You'll need to commit these changes to your repository."
+	echo ""
+	echo "You should ABSOLUTELY NOT DO THIS if you started with a dirty working tree."
+	echo "It would be difficult to recover your changes."
+	echo ""
+	pause
+	read -rp "Proceed with removing old files? [Y/n] " CONFIRM
+	echo ""
+	CONFIRM="${CONFIRM:-y}"
+	[ "$CONFIRM" = "y" ] && {
+	    install_clean_up_old_files
+	}
+	[ "$CONFIRM" = "y" ] || {
+	    echo "Not removing old files. Halting installation."
+	    exit 2
+	}
+    }
+    [ $SIGNATURE_MATCH = true ] || {
+	echo "The original toolkit doesn't seem to be installed here."
+	echo "If it is, then this script is probably being too cautious about removing the old"
+	echo "files. You can report this to the maintainers, or better, open a PR to fix it."
+	echo ""
+	install_go
+    }
+}
+
+# Assumes checks have already been done and handles cleaning up build-related files from the starter kit.
+# There are multiple version of starter kit files out there, so this needs to try to be smart enough to
+# deal with all of them.
+function install_clean_up_old_files {
+    NUKE_FILES=(
+	Jenkinsfile
+	variables.sh
+	build.sh
+	publish.sh
+	test.sh
+	requirements.txt
+	Pipfile
+	Pipfile.lock
+	tox.ini
+	Makefile
+	docs/Makefile
+	docs/make.bat
+	scripts/build.sh
+	scripts/publish.sh
+	scripts/test.sh
+	scripts/variables.sh
+	scripts/md-rst.sh
+    )
+    for F in "${NUKE_FILES[@]}"; do rm -f "$F"; done
+    # If we emptied the scripts dir, get rid of it.
+    [ -d scripts ] && rmdir scripts &> /dev/null
+    echo "Old starter kit files removed. The functionality of these removed files is now provided"
+    echo "by the toolkit you're installing."
+    echo ""
+    install_go
+}
+
+# Takes care of the remaining installation tasks after getting past all the validation, configuration,
+# and cleanup of old files. Notably, the configuration file should already be set, and the toolkit repo
+# must have been cloned already, or we wouldn't be here.
+function install_go {
+    cp .rax-docs/repo/Jenkinsfile .
+    IGNORE="# Ignore rax-docs installation. It should be pulled with './rax-docs get' when needed.\n.rax-docs/repo\n"
+    IGNORE+="# Ignore rax-docs cache dir, where info specific to the local installation is stored.\n.rax-docs/cache"
+    [ -f .gitignore ] && echo -e "\n$IGNORE" >> .gitignore
+    [ -f .gitignore ] || echo -e "$IGNORE" > .gitignore
+    install_all_done
+}
+
+# Does post-install stuff.
+function install_all_done {
+    echo "Install success!"
+    echo ""
+    pause
+    echo "Remember to commit the changes that have been made in order to reap the benefits!"
+    echo ""
+    pause
+    echo "Alternately, if you regret your decision, and you started from a clean working tree,"
+    echo "you can remove the toolkit now by running:"
+    echo ""
+    pause
+    echo "git reset --hard"
+    echo "git clean -ffd"
+    echo ""
+    pause
+    echo "Your project's configuration items have been written to files in .rax-docs/config. I"
+    echo "recommend that you also commit these files so that future runs of this tool have a"
+    echo "source of truth for your project data."
+    echo ""
+    pause
+    echo "See https://github.rackspace.com/IX/rax-docs for additional information about this toolkit."
+    pause
+}
+
+# Checks ./Jenkinsfile for variables we expect to find in the original toolkit. If successful, we'll know
+# the project settings, so the user doesn't have to enter them again. This function sets the project
+# variables that can be derived from the Jenkinsfile. The extracted values should be verified with the
+# user.
+function inspect_old_jenkinsfile {
+    echo "Trying to gather project settings from Jenkinsfile."
+    echo ""
+
+    # Newer version, with variables defined at the top of the Jenkinsfile like:
+    # def orgName="my-org"
+    VALUE_EXTRACTER="s/^.*=['\"]\(.*\)['\"]$/\1/"
+    GITHUB_ORG=$(grep "^def orgName=" Jenkinsfile | sed "$VALUE_EXTRACTER")
+    GITHUB_REPO=$(grep "^def repoName=" Jenkinsfile | sed "$VALUE_EXTRACTER")
+
+    # Older version, like the one used in the engineering handbook. The whole URL is embedded in the
+    # "checkout" step.
+    [ -z "$GITHUB_ORG" ] && [ -z "$GITHUB_REPO" ] && {
+	VALUE_MATCHER=".*git@github.rackspace.com:\(.*\)/\(.*\)\.git.*"
+	GITHUB_ORG=$(grep "checkout scm:.*url: 'git@github.rackspace.com:" Jenkinsfile | sed "s#${VALUE_MATCHER}#\1#")
+	GITHUB_REPO=$(grep "checkout scm:.*url: 'git@github.rackspace.com:" Jenkinsfile | sed "s#${VALUE_MATCHER}#\2#")
+    }	
+
+    [ -z "$GITHUB_ORG" ] || [ -z "$GITHUB_REPO" ] && {
+	echo "Your Jenkinsfile is in a format that I don't recognize. You can help make this tool better"
+	echo "by letting my maintainers know, or better yet, submit a PR that adds handling of your"
+	echo "Jenkinsfile format."
+	echo ""
+	pause
+    }
+}
+
+CMD="$1"
+# "test" is a bash builtin. We can't name a function that, so give the "test" command a different function name.
+[ "$CMD" = "test" ] && CMD=testy
+shift
+$CMD "$@"
