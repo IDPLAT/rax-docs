@@ -141,7 +141,7 @@ Clone url : git url"
 @test "installing latest pins to a specific version" {
     run .rax-docs/repo/internal/main internal_install <<<"$ALL_YES"
     [ "$status" -eq 0 ]
-    [[ "${lines[7]}" =~ Version:\ (.*) ]]
+    [[ "${lines[6]}" =~ Version:\ (.*) ]]
     REPORTED_VERSION="${BASH_REMATCH[1]}"
     ACTUAL_VERSION=$(git -C .rax-docs/repo rev-parse HEAD)
     SAVED_VERSION=$(grep 'TOOLKIT_VERSION="' .rax-docs/config/bash)

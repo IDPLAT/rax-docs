@@ -82,3 +82,21 @@ function teardown {
     [ "${lines[-1]}" = "banana command failed" ]
     [ $status -eq 1 ]
 }
+
+@test "running the script suggests updating when appropriate" {
+    # Make it look like the last update check was 2 weeks ago
+    mkdir -p .rax-docs/cache
+    touch -d '2 weeks ago' .rax-docs/cache/update_check
+    # and the rax-docs script is 2 weeks old
+    touch -d '3 weeks ago' rax-docs
+    # and the toolkit is present
+    mkdir -p .rax-docs/repo
+    # The update message waits for acknowledgement, so send an "enter"
+    run ./rax-docs banana <<<"$(printf "\n")"
+    [ "${lines[0]}" = "A new version of this script is available!" ]
+    # It fetched to update the local toolkit
+    [[ "$(cat git-input)" =~ fetch\ --prune\ --tags ]]
+    # After it fetched, it took the timestamp of the last change to
+    # the script in the repo for comparison
+    [[ "$(cat git-input)" =~ fetch.*log\ -1\ --pretty=format:%ci\ origin/master\ --\ rax-docs ]]
+}
