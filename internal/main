@@ -38,7 +38,7 @@ function install_status_check {
     # If we're not in a git repo, ignore this part
     git rev-parse &> /dev/null && {
 	STATUS=$(git status --porcelain | grep -v '^.. rax-docs$' | grep -v '^.. \.rax-docs/' | grep -v '^.. \.gitmodules$' || true)
-	[ "$STATUS" = "" ] || {
+	if [ "$STATUS" != "" ]; then
 	    echo "You have uncommitted changes!"
 	    echo ""
             echo "I *STRONGLY RECOMMEND* that you commit all of your local changes before proceeding."
@@ -50,20 +50,19 @@ function install_status_check {
             echo ""
 	    pause
             read -rp "Are you ABSOLUTELY SURE you want to install without committing your other changes? [y/N] " CONFIRM
-	    [ "$CONFIRM" = "y" ] && {
+	    if [ "$CONFIRM" = "" ] || [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
 		echo ""
 		echo "On your own head be it."
 		echo ""
 		pause
-            }
-	    [ "$CONFIRM" = "y" ] || {
+	    else
 		echo ""
 		echo "A wise choice, young padawan."
 		rm -rf .rax-docs
 		pause
 		return 2
-            }
-	}
+            fi
+	fi
     }
     install_version_set
 }
@@ -71,7 +70,7 @@ function install_status_check {
 # After the toolkit is cloned, this checks out the version selected by the user and resolves it
 # to a version that can be stored in the config, if necessary.
 function install_version_set {
-    [ -z "$CHOSEN_VERSION" ] && {
+    if [ -z "$CHOSEN_VERSION" ]; then
 	echo "Installing latest toolkit. This will use the latest master, which SHOULD be stable;"
 	echo "however, it's usually better to stick to tagged release versions. If you continue,"
 	echo "your installation will then be pinned to the current master commit and WILL NOT update"
@@ -81,22 +80,19 @@ function install_version_set {
 	echo ""
 	pause
 	read -rp "Are you sure you want to install latest? [Y/n] " CONFIRM
-	CONFIRM="${CONFIRM:-y}"
-	[ "$CONFIRM" = "y" ] && {
+	if [ "$CONFIRM" = "" ] || [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
 	    CHOSEN_VERSION=master
 	    DISCOVER_VERSION=true
-	}
-	[ "$CONFIRM" = "y" ] || {
+	else
 	    echo ""
 	    echo "Not installing latest."
 	    rm -rf .rax-docs
 	    exit 2
-	}
-    }
-    [ -z "$CHOSEN_VERSION" ] || {
+	fi
+    else
 	echo "Installing toolkit version $CHOSEN_VERSION."
 	DISCOVER_VERSION=false
-    }
+    fi
     echo ""
     OUTPUT=$(git -C .rax-docs/repo checkout "$CHOSEN_VERSION" 2>&1) || {
 	fail "Error checking out toolkit version:\n\n$OUTPUT"
@@ -107,8 +103,11 @@ function install_version_set {
 	DISCOVER_VERSION=true
     }
     # If we need to pin the version, get the commit hash of HEAD
-    [ "$DISCOVER_VERSION" = true ] && INSTALLED_VERSION=$(git -C .rax-docs/repo rev-parse HEAD)
-    [ "$DISCOVER_VERSION" = true ] || INSTALLED_VERSION=$CHOSEN_VERSION
+    if [ "$DISCOVER_VERSION" = true ]; then
+	INSTALLED_VERSION=$(git -C .rax-docs/repo rev-parse HEAD)
+    else
+	INSTALLED_VERSION=$CHOSEN_VERSION
+    fi
     echo "Installed toolkit to .rax-docs/repo"
     echo "Version: $INSTALLED_VERSION"
     echo ""
@@ -140,20 +139,18 @@ function install_configure {
 # After this function, the variables all have trusted values.
 function install_verify_config {
     echo "Verify or enter the following details about your project."
-    [ -n "$GITHUB_ORG" ] && {
+    if [ -n "$GITHUB_ORG" ]; then
 	read -rp "Github organization will be '$GITHUB_ORG'. Press Enter to accept, or enter new org: " ANSWER
 	[ -z "$ANSWER" ] || GITHUB_ORG="$ANSWER"
-    }
-    [ -n "$GITHUB_ORG" ] || {
+    else
 	read -rp "Enter Github organization: " GITHUB_ORG
-    }
-    [ -n "$GITHUB_REPO" ] && {
+    fi
+    if [ -n "$GITHUB_REPO" ]; then
 	read -rp "Github repository name will be '$GITHUB_REPO'. Press Enter to accept, or enter new name: " ANSWER
 	[ -z "$ANSWER" ] || GITHUB_REPO="$ANSWER"
-    }
-    [ -n "$GITHUB_REPO" ] || {
+    else
 	read -rp "Enter Github repository name: " GITHUB_REPO
-    }
+    fi
     echo ""
     GIT_CLONE_URL="git@github.rackspace.com:$GITHUB_ORG/$GITHUB_REPO.git"
     echo "Clone URL will be $GIT_CLONE_URL"
@@ -168,8 +165,7 @@ function install_verify_config {
     pause
     read -rp "Proceed with these project settings? [Y/n] " ANSWER
     echo ""
-    ANSWER="${ANSWER:-y}"
-    [ "$ANSWER" = "y" ] || {
+    [ "$ANSWER" = "" ] || [ "$ANSWER" = "y" ] || [ "$ANSWER" = "Y" ] || {
 	echo "Halting installation."
 	rm -rf .rax-docs
 	return 2
@@ -216,7 +212,7 @@ function install_check_old_files {
 
     # If we made it this far without finding something that doesn't match, double check with the
     # user, and then clean up all the old stuff.
-    [ $SIGNATURE_MATCH = true ] && {
+    if [ $SIGNATURE_MATCH = true ]; then
 	echo "Files found from original toolkit. If you proceed, those files will be removed."
 	echo "This toolkit replaces them. You'll need to commit these changes to your repository."
 	echo ""
@@ -226,22 +222,19 @@ function install_check_old_files {
 	pause
 	read -rp "Proceed with removing old files? [Y/n] " CONFIRM
 	echo ""
-	CONFIRM="${CONFIRM:-y}"
-	[ "$CONFIRM" = "y" ] && {
+	if [ "$CONFIRM" = "" ] || [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
 	    install_clean_up_old_files
-	}
-	[ "$CONFIRM" = "y" ] || {
+	else
 	    echo "Not removing old files. Halting installation."
 	    exit 2
-	}
-    }
-    [ $SIGNATURE_MATCH = true ] || {
+	fi
+    else
 	echo "The original toolkit doesn't seem to be installed here."
 	echo "If it is, then this script is probably being too cautious about removing the old"
 	echo "files. You can report this to the maintainers, or better, open a PR to fix it."
 	echo ""
 	install_go
-    }
+    fi
 }
 
 # Assumes checks have already been done and handles cleaning up build-related files from the starter kit.
@@ -283,8 +276,11 @@ function install_go {
     cp .rax-docs/repo/Jenkinsfile .
     IGNORE="# Ignore rax-docs installation. It should be pulled with './rax-docs get' when needed.\n.rax-docs/repo\n"
     IGNORE+="# Ignore rax-docs cache dir, where info specific to the local installation is stored.\n.rax-docs/cache"
-    [ -f .gitignore ] && echo -e "\n$IGNORE" >> .gitignore
-    [ -f .gitignore ] || echo -e "$IGNORE" > .gitignore
+    if [ -f .gitignore ]; then
+	echo -e "\n$IGNORE" >> .gitignore
+    else
+	echo -e "$IGNORE" > .gitignore
+    fi
     install_all_done
 }
 
