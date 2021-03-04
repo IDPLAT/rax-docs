@@ -10,6 +10,13 @@ function setup {
     export RAX_DOCS_WRAPPER_VERSION
     # Run each test in an isolated, clean working directory
     TMPDIR=$(mktemp -d)
+    # Commiting in an anonymous container will fail without setting
+    # the commiter's identity. Commits happen both here and within
+    # tests.
+    GIT_AUTHOR_NAME=rax-docs-tests
+    export GIT_AUTHOR_NAME
+    GIT_COMMITTER_NAME=rax-docs-tests
+    export GIT_COMMITTER_NAME
     # This script runs from the cloned toolkit directory after the wrapper
     # has cloned it. Set up a fake git repo in the appropriate place so
     # everything looks right to the script.

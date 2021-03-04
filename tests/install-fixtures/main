@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Stubs out the internal/main script for tests. This lets us test
 # the wrapper script in isolation, verifying the commands it sends
 # to the internal script.

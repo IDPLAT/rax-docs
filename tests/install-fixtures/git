@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Stubs out git for tests. This way we can verify the right commands are
 # being run without actually cloning or changing versions. Writing tests
 # otherwise is tricky because you're testing the cloned toolkit instead
