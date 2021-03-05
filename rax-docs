@@ -127,12 +127,16 @@ function update_check {
 
 update_check
 
-[ $# -eq 0 ] && {
-    echo "Try '$SCRIPTNAME install' to install the toolkit."
-    echo "For additional information, see the readme at"
-    echo "https://github.rackspace.com/dcx/rax-docs"
-    exit 1
-}
+if [ $# -eq 0 ]; then
+     if [ -d .rax-docs/repo ]; then
+	 .rax-docs/repo/internal/main usage
+     else
+	 echo "Try '$SCRIPTNAME install' to install the toolkit."
+	 echo "For additional information, see the readme at"
+	 echo "https://github.rackspace.com/dcx/rax-docs"
+     fi
+     exit 1
+fi
 
 TOPCMD="$1"
 shift
