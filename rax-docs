@@ -13,7 +13,7 @@
 ##   when you need precision.
 ## - Functions and the internal script(s) signal a fatal error to this script with exit code 1.
 ##   They signal a user abort with exit code 2.
-## - Submodules are messy and impossible to fully remove once added to a repo; therefore I'm
+## - Git submodules are messy and impossible to fully remove once added to a repo; therefore I'm
 ##   avoiding them for now.
 ## - This wrapper script should be as foolproof as possible because it's intended to be
 ##   distributed into all of the docs projects, and finding and updating all the copies of it
@@ -30,23 +30,13 @@ function install {
     echo ""
     mkdir -p .rax-docs
     rm -rf .rax-docs/repo
-    cloneish || {
+    OUTPUT=$(git clone git@github.rackspace.com:dcx/rax-docs.git .rax-docs/repo 2>&1) || {
         echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
         echo ""
         echo "$OUTPUT"
         exit 1
     }
     .rax-docs/repo/internal/main internal_install "$@"
-}
-
-# Clones the toolkit repo, or obtains it from a local repo directory. If SOURCE_DIR is set,
-# it copies that directory. Otherwise, it clones from github. Stores the output of the command
-# in OUTPUT for use in error messages. Copying from a local source directory is meant primarily
-# for ease of testing.
-function cloneish {
-    [ -n "$SOURCE_DIR" ] && CMD=(cp -r "$SOURCE_DIR" .rax-docs/repo)
-    [ -z "$SOURCE_DIR" ] && CMD=(git clone git@github.rackspace.com:dcx/rax-docs.git .rax-docs/repo)
-    OUTPUT=$("${CMD[@]}" 2>&1)
 }
 
 ## Get the installed toolkit version. This is for when the toolkit has been installed in a
@@ -67,7 +57,7 @@ function get {
 	return 1
     }
     rm -rf .rax-docs/repo
-    cloneish || {
+    OUTPUT=$(git clone git@github.rackspace.com:dcx/rax-docs.git .rax-docs/repo 2>&1) || {
 	echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
 	echo ""
 	echo "$OUTPUT"
