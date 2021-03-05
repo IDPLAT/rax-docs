@@ -347,6 +347,14 @@ function inspect_old_jenkinsfile {
     }
 }
 
+# Sets up the tools environment, either in Jenkins or for a dev.
+function setup {
+    echo "Setting up local dev environment"
+    echo ""
+    docker rmi rax-docs:latest > /dev/null 2>&1 || true
+    docker build .rax-docs/repo/resources -t rax-docs
+}
+
 function usage {
     cat <<EOF
 Usage: rax-docs <command> [command-options]
@@ -443,7 +451,7 @@ TOPCMD="$1"
 shift
 
 case $TOPCMD in
-    internal_install|status|usage)
+    internal_install|status|usage|setup)
 	$TOPCMD "$@"
 	;;
 
