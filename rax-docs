@@ -90,6 +90,43 @@ function tools_check {
     }
 }
 
+function update_check {
+    mkdir -p .rax-docs/cache
+    [ -d .rax-docs/repo ] || return 0
+    # All timestamps are gotten in seconds since epoch
+    LAST_CHECK=$(stat -c %Y .rax-docs/cache/update_check 2>&1) || {
+	# If there's no record of a check, it was probably just installed, so assume it's up
+	# to date. This will also help prevent the update check from interfering with tests.
+	LAST_CHECK=$(date +%s)
+    }
+    # Regardless of the outcome, only let this happen once per check period. If it fails because
+    # github connections are timing out, doing it over and over until we succeed would make the
+    # toolkit useless.
+    touch .rax-docs/cache/update_check
+    # Check for updates if not fetched the previous week
+    NEXT_CHECK=$((LAST_CHECK + 604800))
+    NOW=$(date +%s)
+    if [ "$NOW" -gt "$NEXT_CHECK" ]; then
+	git -C .rax-docs/repo fetch --prune --tags &> /dev/null || true
+	MY_TS=$(stat -c %Y "$SCRIPTNAME")
+	THEIR_TS_GIT=$(git -C .rax-docs/repo log -1 --pretty="format:%ci" origin/master -- rax-docs)
+	THEIR_TS=$(date -d "$THEIR_TS_GIT" +%s)
+	if [ "$MY_TS" -lt "$THEIR_TS" ]; then
+	    echo "A new version of this script is available!"
+	    echo ""
+	    echo "It may have bugfixes or new features available. You should"
+	    echo "consider trying it out by grabbing it from"
+	    echo "https://github.rackspace.com/dcx/rax-docs"
+	    echo ""
+	    read -rp "Press the any key to continue " -n1
+	    [ "$REPLY" = "" ] || echo ""
+	    echo ""
+	fi
+    fi
+}
+
+update_check
+
 [ $# -eq 0 ] && {
     echo "Try '$SCRIPTNAME install' to install the toolkit."
     echo "For additional information, see the readme at"

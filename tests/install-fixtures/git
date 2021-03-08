@@ -1,12 +1,24 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Stubs out git for tests. This way we can verify the right commands are
 # being run without actually cloning or changing versions. Writing tests
 # otherwise is tricky because you're testing the cloned toolkit instead
 # of the local one.
 echo "$@" >> git-input
+
+# After a clone, the wrapper expects to be able to call the main
+# internal script, so put that test fixture in place.
 [ "$1" = clone ] && {
   mkdir -p .rax-docs/repo/internal
   mv main .rax-docs/repo/internal
+}
+
+# The update check uses git log to compare timestamps, so this command
+# has to produce a timestamp as output, formatted like git does. The
+# format looks like "2021-02-26 14:22:38 -0600". Just output the
+# current time to trigger the update logic.
+UPDATE_LOG_CMD='log -1 --pretty='
+[[ "$*" =~ $UPDATE_LOG_CMD ]] && {
+    date +"%Y-%m-%d %H:%M:%S %z"
 }
 exit 0
