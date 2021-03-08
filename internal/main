@@ -22,6 +22,13 @@ function fail {
     exit 1
 }
 
+function status {
+    echo "RAX Docs Toolkit"
+    VERSION=$(git -C .rax-docs/repo describe HEAD --tags 2>&1) || VERSION=$(git -C .rax-docs/repo describe HEAD --tags --always)
+    echo "Version: $VERSION"
+    echo "Install path: .rax-docs"
+}
+
 # Called by wrapper script install after it clones the project. The wrapper is the script downloaded by users.
 # It's kept as minimal as possible so that it's small and doesn't change often. Most of the logic is in here.
 # This function installs the toolkit in the current directory. The version being installed is what has already
@@ -340,8 +347,110 @@ function inspect_old_jenkinsfile {
     }
 }
 
-CMD="$1"
+function usage {
+    cat <<EOF
+Usage: rax-docs <command> [command-options]
+
+Build docs based on the Docs Starter Kit (https://github.rackspace.com/IX/docs-starter-kit)
+
+DOCS BUILDING COMMANDS
+
+     To lower the barrier of entry, this set of commands mimics those
+     of the legacy tools that are built into the Docs Starter Kit in
+     the form of Makefiles.
+
+     None of these commands work until the toolkit is installed. See
+     TOOLKIT MAINTENANCE COMMANDS.
+
+     setup
+
+	Prepares the build environment. For a user, this builds a
+	local Docker image to act as your development environment. In
+	Jenkins, it configures a Python virtualenv.
+
+	You must run this command once before running any other
+	commands to build docs.
+
+	When you upgrade to a new version of the toolkit, you should
+	run this command again to take advantage of updates to the
+	image.
+
+    html
+
+	Builds HTML pages based on your current working tree
+        files. Upon success, you can browse the docs with, for
+        example:
+
+	firefox docs/_build/html/index.html
+
+    test
+
+	Run tests on your docs sources. Tests will include spell
+	checking, style checking with doc8, and style checking with
+	Vale. These are the same tests the Jenkins runs on a PR.
+
+	Note: at present, there are small differences between the
+	spell checking in the local Docker container and the spell
+	checking in Jenkins. The cause is unknown.
+
+    htmlvers
+
+        Builds HTML pages based on all the current branches and tags
+        that have been pushed to GitHub. This is the version of your
+        docs that will be published to GitHub Pages upon merging a
+        pull request.
+
+    publish
+
+	Publishes your docs to GitHub Pages. This command should
+	normally only be run by Jenkins. If a dev runs it manually in
+	their local environment, your next Jenkins build may require
+	manual intervention to resolve conflicts.
+
+TOOLKIT MAINTENANCE COMMANDS
+
+    install [version]
+
+	Installs the toolkit. Use to install for the first time or to
+	install a new version. Pass a git treeish available in the
+	GitHub repository. Omitting the version will retrive the
+	latest version.
+
+	Tags are considered stable versions. Installing a branch will
+	pin you to the commit that branch currently points at.
+
+	This is the only command available if you've never installed
+	the toolkit in your current project.
+
+    get
+
+	Retrieves the configured version of the toolkit from
+	GitHub. Use this when you clone a docs repo that's using this
+	toolkit. The toolkit configuration will be in the repository,
+	but you need to fetch the actual toolkit files before using
+	it.
+
+    status
+
+	Summarizes the local toolkit installation.
+
+EOF
+}
+
+TOPCMD="$1"
 # "test" is a bash builtin. We can't name a function that, so give the "test" command a different function name.
-[ "$CMD" = "test" ] && CMD=testy
+[ "$TOPCMD" = "test" ] && TOPCMD=testy
 shift
-$CMD "$@"
+
+case $TOPCMD in
+    internal_install|status|usage)
+	$TOPCMD "$@"
+	;;
+
+    *)
+	echo "Unrecognized command: $TOPCMD"
+	echo ""
+	usage
+	exit 1
+	;;
+esac
