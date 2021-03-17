@@ -30,7 +30,7 @@ function install {
     echo ""
     mkdir -p .rax-docs
     rm -rf .rax-docs/repo
-    OUTPUT=$(git clone git@github.rackspace.com:dcx/rax-docs.git .rax-docs/repo 2>&1) || {
+    OUTPUT=$(git clone git@github.com:IDPLAT/rax-docs.git .rax-docs/repo 2>&1) || {
         echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
         echo ""
         echo "$OUTPUT"
@@ -57,7 +57,7 @@ function get {
 	return 1
     }
     rm -rf .rax-docs/repo
-    OUTPUT=$(git clone git@github.rackspace.com:dcx/rax-docs.git .rax-docs/repo 2>&1) || {
+    OUTPUT=$(git clone git@github.com:IDPLAT/rax-docs.git .rax-docs/repo 2>&1) || {
 	echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
 	echo ""
 	echo "$OUTPUT"
@@ -116,7 +116,7 @@ function update_check {
 	    echo ""
 	    echo "It may have bugfixes or new features available. You should"
 	    echo "consider trying it out by grabbing it from"
-	    echo "https://github.rackspace.com/dcx/rax-docs"
+	    echo "https://github.com/IDPLAT/rax-docs"
 	    echo ""
 	    read -rp "Press the any key to continue " -n1
 	    [ "$REPLY" = "" ] || echo ""
@@ -133,7 +133,7 @@ if [ $# -eq 0 ]; then
      else
 	 echo "Try '$SCRIPTNAME install' to install the toolkit."
 	 echo "For additional information, see the readme at"
-	 echo "https://github.rackspace.com/dcx/rax-docs"
+	 echo "https://github.com/IDPLAT/rax-docs"
      fi
      exit 1
 fi

@@ -50,10 +50,10 @@ command to get the script.)
 
 1. Install it. Find the [release](https://github.com/IDPLAT/rax-docs/releases) you want and use that as the version to install:
 
- ```
- chmod +x rax-docs
-    ./rax-docs install <version>
- ```
+    ```
+    chmod +x rax-docs
+        ./rax-docs install <version>
+    ```
 
 1. Commit the changes it made, including the `rax-docs` script and
 config files. Do NOT commit the cloned repository. If it removed
