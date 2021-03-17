@@ -34,8 +34,10 @@ jobs:
         run: |
           shellcheck rax-docs
           find internal -type f | xargs shellcheck
-          find tests -type f | xargs shellcheck
+          find tests -type f -not -name README.md | xargs shellcheck
+          find it -type f -not -name README.md | xargs shellcheck
 
       - name: Run tests
         run: |
           bats tests
+          bats it

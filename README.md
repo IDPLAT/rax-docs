@@ -191,3 +191,11 @@ testing.
 `SPEED`: By default, there are some pauses during output for human
 readability. Tests shouldn't need to wait for these pauses, so set this to
 `true` for faster results.
+
+`NO_DOCKER_BUILD`: The Docker integration tests exercise building the
+Docker image for the dev environment. That's a really slow process
+that also clobbers your local docs image. Set this variable to any
+value to skip tests that build a new image.
+
+See the `tests` and `it` directories for further details on the unit
+and integration tests, respectively.

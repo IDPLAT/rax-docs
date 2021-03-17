@@ -1,6 +1,11 @@
 #!/usr/bin/env bats
 # -*- mode: sh -*-
 
+## Tests of the wrapper script, isolated from the internals by the
+## test fixture copied in during setup. These tests focus on the
+## behavior of the wrapper script alone by passing values to it and
+## inspecting the commands it runs and values it returns.
+
 function setup {
     # Tell the script not to pause for human readability
     export SPEED=true
