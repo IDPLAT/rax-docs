@@ -1,0 +1,32 @@
+# Rackspace Vale
+
+
+# CI builds will only fail on error-level alerts.
+# MinAlertLevel specifies the minimum alert severity that Vale will report.
+# The options are "suggestion," "warning," or "error" (defaults to "suggestion").
+MinAlertLevel = suggestion
+
+# The path to your _build folder (relative to the configuration file).
+SphinxBuildPath = _build
+
+# The command that builds your site (make html is the default for Sphinx).
+# If this is defined, Vale will re-build your site prior to linting any content—making it possible to use Sphinx
+# and Vale in lint-on-the-fly environments (e.g., text editors) at the cost of performance.
+#SphinxAutoBuild = make html
+
+# Specifies inline-level HTML tags to ignore. In other words, these tags may occur in an active scope
+# (unlike SkippedScopes, which are skipped entirely) but their content still won't raise any alerts.
+IgnoredScopes = code
+
+# Specifies where Vale should look for its external resources (e.g., styles and ignore files).
+# The path value may be absolute or relative to the location of the parent .vale.ini file.
+# The styles path for Jenkins and Docker are different since both have different installation methods.  Docker
+# places the styles path in '/styles' while Jenkins installs it in 'docs/styles'.  The mustache variable is
+# replaced with the actual value used when you run 'make vale' or 'make tests'.  For more information, see the
+# inner Makefile.
+StylesPath = {{styles_path}}
+Vocab = Vocab
+
+[*.html]
+# Specifies styles that should have all of their rules enabled.
+BasedOnStyles = Microsoft, Google, docs-vale
