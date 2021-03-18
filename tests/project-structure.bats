@@ -29,11 +29,27 @@
     cd "$PROJECTDIR"
     for FILE in *; do
 	echo "Check file: $FILE"
+	# readme, of course
 	[ "$FILE" = "README.md" ] ||
+	    # the wrapper script that people need to download; top
+	    # level for ease of access
 	    [ "$FILE" = "rax-docs" ] ||
+	    # directory containing internal scripts
 	    [ "$FILE" = "internal" ] ||
+	    # directory containing additional resources, not script/source files
 	    [ "$FILE" = "resources" ] ||
+	    # directory containing unit tests
 	    [ "$FILE" = "tests" ] ||
+	    # directory containing integration tests
 	    [ "$FILE" = "it" ]
+    done
+}
+
+@test "test fixture names match test file names" {
+    FIXTUREDIR="$BATS_TEST_DIRNAME/fixtures"
+    for F in "$FIXTUREDIR"/*; do
+	NAME="$(basename "$F")"
+	echo "Fixture: $NAME"
+	[ -f "$BATS_TEST_DIRNAME/$NAME.bats" ]
     done
 }

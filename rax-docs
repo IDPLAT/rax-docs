@@ -93,7 +93,7 @@ function tools_check {
 function update_check {
     mkdir -p .rax-docs/cache
     [ -d .rax-docs/repo ] || return 0
-    # All timestamps are gotten in seconds since epoch
+    # All timestamps are in seconds since epoch
     LAST_CHECK=$(stat -c %Y .rax-docs/cache/update_check 2>&1) || {
 	# If there's no record of a check, it was probably just installed, so assume it's up
 	# to date. This will also help prevent the update check from interfering with tests.

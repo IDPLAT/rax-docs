@@ -16,7 +16,7 @@ function setup {
     # writes out what was passed to it in a file named <name>-input. Tests can use
     # these files to verify the inputs.
     cp rax-docs "$TMPDIR"
-    cp tests/install-fixtures/* "$TMPDIR"
+    cp tests/fixtures/wrapper-script/* "$TMPDIR"
     PATH="$TMPDIR":$PATH
     cd "$TMPDIR" || exit 1
 }
