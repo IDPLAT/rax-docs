@@ -34,5 +34,3 @@ run wget https://install.goreleaser.com/github.com/ValeLint/vale.sh && \
     git clone https://github.com/achatur/docs-vale.git styles/docs-vale && \
     git clone https://github.com/errata-ai/Google.git styles/Google && \
     git clone https://github.com/errata-ai/Microsoft.git styles/Microsoft
-
-ENV NO_VENV true
