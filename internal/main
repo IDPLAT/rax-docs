@@ -355,6 +355,35 @@ function setup {
     docker build .rax-docs/repo/resources -t rax-docs
 }
 
+function docker_run {
+    docker image inspect rax-docs > /dev/null || {
+	echo "You need to set up your local environment first. Try running 'rax-docs setup'."
+	exit 1
+    }
+    docker run --rm \
+                -v "$PWD":/src \
+                -v "$HOME"/.ssh:/ssh_config \
+                -w /src \
+                --dns=10.13.90.38 --dns=10.13.90.39 --dns=8.8.8.8 \
+                --dns-search=rackspace.com \
+                -e OUTER_PWD="$PWD" \
+                -e PLEASE=true \
+                --user "$(id -u)":"$(id -g)" \
+                rax-docs "$@"
+}
+
+function docker_make {
+    docker_run make -C /src/docs -f /src/.rax-docs/repo/resources/Makefile "$@"
+}
+
+function html {
+    docker_make html
+}
+
+function testy {
+    docker_make test
+}
+
 function usage {
     cat <<EOF
 Usage: rax-docs <command> [command-options]
@@ -451,7 +480,7 @@ TOPCMD="$1"
 shift
 
 case $TOPCMD in
-    internal_install|status|usage|setup)
+    internal_install|status|usage|setup|html|testy)
 	$TOPCMD "$@"
 	;;
 

@@ -59,3 +59,38 @@ function teardown {
     run docker run --rm rax-docs vale --version
     [ "$output" = "vale version 2.4.0" ]
 }
+
+@test "the toolkit can use the image to build a simple docs project" {
+    mkdir docs
+    echo "Hello world" > docs/contents.rst
+    touch docs/conf.py
+    run ./rax-docs html
+    [ "$status" -eq 0 ]
+    [ -f docs/_build/html/contents.html ]
+    [[ "$(cat docs/_build/html/contents.html)" =~ Hello\ world ]]
+}
+
+@test "the toolkit can use the image to test a simple docs project" {
+    mkdir docs
+    echo "Hello world. The pencil will be returned upon completion." > docs/contents.rst
+    echo "from sphinxcontrib import spelling" > docs/conf.py
+    echo "extensions = ['sphinxcontrib.spelling']" >> docs/conf.py
+    run ./rax-docs test
+    [ "$status" -eq 0 ]
+    PHRASES=(
+	# The html pages get built
+	'HTML finished. The pages are in'
+	# Vale checks style
+	'Vale Finished. Output is in'
+	# It should've found an error
+	"'be returned' looks like"
+	# doc8 check style
+	'Detailed error counts:'
+	# spelling runs
+	'Spell check finished. The spellcheck output is in'
+    )
+    for PHRASE in "${PHRASES[@]}"; do
+	echo "Check phrase: $PHRASE"
+	[[ "$output" =~ $PHRASE ]]
+    done
+}
