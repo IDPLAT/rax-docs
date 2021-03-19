@@ -21,8 +21,9 @@ function setup {
     # has cloned it. Set up a fake git repo in the appropriate place so
     # everything looks right to the script.
     mkdir -p "$TMPDIR"/.rax-docs/repo/internal
+    mkdir -p "$TMPDIR"/.rax-docs/repo/resources
     cp internal/main "$TMPDIR"/.rax-docs/repo/internal/main
-    echo "fake Jenkinsfile for testing" > "$TMPDIR"/.rax-docs/repo/Jenkinsfile
+    echo "fake Jenkinsfile for testing" > "$TMPDIR"/.rax-docs/repo/resources/Jenkinsfile
     cd "$TMPDIR"/.rax-docs/repo || exit 1
     git init
     git add .
@@ -205,7 +206,7 @@ Clone url : git url"
     grep '^.rax-docs/repo$' .gitignore
     [ -f Jenkinsfile ]
     JENKINS_CS=$(sha1sum < Jenkinsfile)
-    ACTUAL_JENKINS_CS=$(sha1sum < .rax-docs/repo/Jenkinsfile)
+    ACTUAL_JENKINS_CS=$(sha1sum < .rax-docs/repo/resources/Jenkinsfile)
     [ "$JENKINS_CS" = "$ACTUAL_JENKINS_CS" ]
 }
 
@@ -242,7 +243,7 @@ Clone url : git url"
     [ ! -f Pipfile ]
     # The Jenksfile should be replaced with ours.
     JENKINS_CS=$(sha1sum < Jenkinsfile)
-    ACTUAL_JENKINS_CS=$(sha1sum < .rax-docs/repo/Jenkinsfile)
+    ACTUAL_JENKINS_CS=$(sha1sum < .rax-docs/repo/resources/Jenkinsfile)
     [ "$JENKINS_CS" = "$ACTUAL_JENKINS_CS" ]
 }
 
