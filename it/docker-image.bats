@@ -1,20 +1,16 @@
 #!/usr/bin/env bats
 # -*- mode: sh -*-
 
-## Integration (slow and destructive) tests of the Docker
-## container. Your local image WILL BE OVERWRITTEN when you run these
-## tests.
-##
-## Set the env var NO_DOCKER_BUILD to any value to prevent building a
-## new image, but realize that the remaining tests will then run with
-## your current image, which may not behave as the tests expect.
+## Integration tests of the Docker image: does it build and run things
+## correctly?.
 
 function setup {
     # Run each test in an isolated, clean working directory
     TMPDIR=$(mktemp -d)
     # The project has the local version of the toolkit in it
     cp rax-docs "$TMPDIR"
-    mkdir -p "$TMPDIR"/.rax-docs
+    mkdir -p "$TMPDIR"/.rax-docs/config
+    echo "TOOLKIT_VERSION=bob" > "$TMPDIR"/.rax-docs/config/bash
     cp -r ./ "$TMPDIR"/.rax-docs/repo/
     cd "$TMPDIR" || exit 1
 }
@@ -29,34 +25,36 @@ function teardown {
 @test "setup produces a docker image" {
     [ -n "$NO_DOCKER_BUILD" ] && skip "User requested skipping docker image build"
     # Delete any existing image so we see if it really builds one
-    docker rmi rax-docs || true
+    docker rmi rax-docs:bob || true
     run ./rax-docs setup
     [ "$status" -eq 0 ]
-    docker image inspect rax-docs:latest
+    # An image should've been created tagged with the current toolkit
+    # version from the config
+    docker image inspect rax-docs:bob
 }
 
 ## If the above test fails, the image won't have been built, and
 ## everything following will also fail.
 
 @test "the image has python installed" {
-    run docker run --rm rax-docs python --version
+    run docker run --rm rax-docs:bob python --version
     # This is the python version matching Jenkins
     [ "$output" = "Python 3.6.13" ]
 }
 
 @test "the image has a pip that works with python 2" {
-    run docker run --rm rax-docs pip --version
+    run docker run --rm rax-docs:bob pip --version
     # As long as we're in Python 2, pip should be less than version 21
     [[ "$output" =~ ^pip\ 20\. ]]
 }
 
 @test "the image has sphinx installed" {
-    run docker run --rm rax-docs sphinx-build --version
+    run docker run --rm rax-docs:bob sphinx-build --version
     [ "$output" = "Sphinx (sphinx-build) 1.5.6" ]
 }
 
 @test "the image has vale installed" {
-    run docker run --rm rax-docs vale --version
+    run docker run --rm rax-docs:bob vale --version
     [ "$output" = "vale version 2.4.0" ]
 }
 
