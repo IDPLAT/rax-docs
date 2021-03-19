@@ -30,7 +30,7 @@ function install {
     echo ""
     mkdir -p .rax-docs
     rm -rf .rax-docs/repo
-    OUTPUT=$(git clone git@github.com:IDPLAT/rax-docs.git .rax-docs/repo 2>&1) || {
+    OUTPUT=$(git clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo 2>&1) || {
         echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
         echo ""
         echo "$OUTPUT"
@@ -56,8 +56,18 @@ function get {
 	echo "Failed to source the config file."
 	return 1
     }
+    [ -n "$JENKINS_URL" ] && {
+	# shellcheck disable=SC1091
+	source /opt/rh/rh-git29/enable || {
+	    echo "Failed to activate latest git on Jenkins."
+	    echo ""
+	    echo "This script uses the -C flag, which the original Jenkins git version "
+	    echo "didn't support. We need a newer git version which supports this flag."
+	    exit 1
+	}
+    }
     rm -rf .rax-docs/repo
-    OUTPUT=$(git clone git@github.com:IDPLAT/rax-docs.git .rax-docs/repo 2>&1) || {
+    OUTPUT=$(git clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo 2>&1) || {
 	echo "Failed to clone the full repo from GitHub. You'll need to fix this problem."
 	echo ""
 	echo "$OUTPUT"

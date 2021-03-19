@@ -52,7 +52,7 @@ command to get the script.)
 
     ```
     chmod +x rax-docs
-        ./rax-docs install <version>
+    ./rax-docs install <version>
     ```
 
 1. Commit the changes it made, including the `rax-docs` script and
