@@ -46,11 +46,12 @@ function teardown {
     [ $status -eq 1 ]
 }
 
-@test "running install clones the toolkit" {
+@test "running install clones the toolkit and switches versions" {
     run ./rax-docs install some-version <<<"$(printf "y\ny\ny\ny\ny\ny\ny\n")"
     [ "${lines[-1]}" = "install command completed" ]
     [ $status -eq 0 ]
-    [ "$(cat git-input)" = "clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo" ]
+    [ "$(head -1 git-input)" = "clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo" ]
+    [ "$(tail -1 git-input)" = "-C .rax-docs/repo checkout some-version" ]
     [ "$(cat main-input)" = "internal_install some-version" ]
 }
 
