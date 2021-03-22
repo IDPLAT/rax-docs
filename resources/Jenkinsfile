@@ -1,7 +1,12 @@
 #!/usr/bin/env groovy
 node {
 
-    load '.rax-docs/config/groovy'
+    /**
+     * The URL to clone. We'd like to discover this from the scm pipeline step, such as
+     * via scmUrl = scm.getUserRemoteConfigs()[0].getUrl(), but permission is denied on
+     * Jenkins for that. Therefore we fall back to setting this during user installation.
+     */
+    def gitCloneUrl = '{{GIT_CLONE_URL}}'
 
     /**
      * The branch to check out when cloning. It depends on whether this is a PR or not.
@@ -25,10 +30,11 @@ node {
     stage('Check it out') {
         deleteDir()
         echo "checking out $cloneBranch"
-        git branch: cloneBranch, credentialsId: 'githubSvc', url: env.GIT_CLONE_URL
+        git branch: cloneBranch, credentialsId: 'githubSvc', url: gitCloneUrl
         sh 'git log -1'
     }
     stage('Set up build environment') {
+        sh './rax-docs get'
         sh './rax-docs setup'
     }
     stage('Test') {

@@ -50,7 +50,7 @@ function teardown {
     run ./rax-docs install some-version <<<"$(printf "y\ny\ny\ny\ny\ny\ny\n")"
     [ "${lines[-1]}" = "install command completed" ]
     [ $status -eq 0 ]
-    [ "$(cat git-input)" = "clone git@github.com:IDPLAT/rax-docs.git .rax-docs/repo" ]
+    [ "$(cat git-input)" = "clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo" ]
     [ "$(cat main-input)" = "internal_install some-version" ]
 }
 
@@ -74,7 +74,7 @@ function teardown {
     [ "${lines[-1]}" = "get command completed" ]
     [ $status -eq 0 ]
     run cat git-input
-    [ "${lines[0]}" = "clone git@github.com:IDPLAT/rax-docs.git .rax-docs/repo" ]
+    [ "${lines[0]}" = "clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo" ]
     [ "${lines[1]}" = "-C .rax-docs/repo checkout master" ]
 }
 

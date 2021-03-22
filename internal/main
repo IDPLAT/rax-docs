@@ -280,7 +280,10 @@ function install_clean_up_old_files {
 # and cleanup of old files. Notably, the configuration file should already be set, and the toolkit repo
 # must have been cloned already, or we wouldn't be here.
 function install_go {
-    cp .rax-docs/repo/resources/Jenkinsfile .
+    sed "s#{{GIT_CLONE_URL}}#$GIT_CLONE_URL#" < .rax-docs/repo/resources/Jenkinsfile > Jenkinsfile || {
+        echo "Failed to replace template var Jenkinsfile."
+        exit 1
+    }
     IGNORE="# Ignore rax-docs installation. It should be pulled with './rax-docs get' when needed.\n.rax-docs/repo\n"
     IGNORE+="# Ignore rax-docs cache dir, where info specific to the local installation is stored.\n.rax-docs/cache"
     if [ -f .gitignore ]; then
@@ -338,13 +341,13 @@ function inspect_old_jenkinsfile {
 	GITHUB_REPO=$(grep "checkout scm:.*url: 'git@github.rackspace.com:" Jenkinsfile | sed "s#${VALUE_MATCHER}#\2#")
     }	
 
-    [ -z "$GITHUB_ORG" ] || [ -z "$GITHUB_REPO" ] && {
+    if [ -z "$GITHUB_ORG" ] || [ -z "$GITHUB_REPO" ]; then
 	echo "Your Jenkinsfile is in a format that I don't recognize. You can help make this tool better"
 	echo "by letting my maintainers know, or better yet, submit a PR that adds handling of your"
 	echo "Jenkinsfile format."
 	echo ""
 	pause
-    }
+    fi
 }
 
 # Sets up the tools environment, either in Jenkins or for a dev.
