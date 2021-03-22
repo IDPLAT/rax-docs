@@ -45,9 +45,11 @@ node {
         sh './rax-docs test'
     }
     if (isPr) {
-        stage("PR stuff") {
-            echo "Should this be inline or in the toolkit? That's a dumb question. Everything to the toolkit!"
-        }
+        stage ('Stage preview HTML') {
+            withCredentials([usernameColonPassword(credentialsId: 'SVCwPAT', variable: 'GITHUB_SECRET')]) {
+	        sh 'PR_NUMBER=$numberPR ./rax-docs post_build_preview'
+            }
+	}
     } else {
         stage("Release stuff") {
             sh './rax-docs publish'

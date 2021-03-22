@@ -462,6 +462,52 @@ function testy {
     do_make test
 }
 
+function post_build_preview {
+    [ -n "$BUILD_URL" ] || {
+	echo "No BUILD_URL set."
+	echo ""
+	echo "This command is meant to run from Jenkins, where a BUILD_URL variable is"
+	echo "available."
+	exit 1
+    }
+    [ -n "$BRANCH_NAME" ] || {
+	echo "No BRANCH_NAME set."
+	echo ""
+	echo "This command is meant to run from Jenkins, where a BRANCH_NAME variable is"
+	echo "set. The value is inspected to find the number of the PR being built."
+	exit 1
+    }
+    [ -n "$GITHUB_SECRET" ] || {
+	echo "No GITHUB_SECRET set."
+	echo ""
+	echo "To post the build preview, the GITHUB_SECRET variable must be set to a"
+	echo "'user:pass' pair that can make POST requests to the GitHub API."
+	exit 1
+    }
+    [ -f .rax-docs/config/bash ] || {
+	echo "Config file missing"
+	echo ""
+	echo "The rax-docs config file at .rax-docs/config/bash must be present. This"
+	echo "file is created during installation. Maybe you didn't commit it to your"
+	echo "project."
+	exit 1
+    }
+    PR_NUMBER="$(echo "$BRANCH_NAME" | cut -d '-' -f '2')"
+    # shellcheck disable=SC1091
+    source .rax-docs/config/bash || {
+	echo "Failed to read config file"
+	echo ""
+	echo "The config file at .rax-docs/config/bash seems to be malformed."
+	exit 1
+    }
+    # The Jenkins that runs this doesn't seem to have the github plugin installed, so we have to do this
+    # manually. It would be nice if we could get https://github.com/jenkinsci/pipeline-github-plugin
+    TEXT="Staging at ${BUILD_URL}execution/node/3/ws/docs/_build/html/index.html"
+    JSON=$(echo '{"body": "BODY"}' | sed "s@BODY@$TEXT@")
+    URL="https://github.rackspace.com/api/v3/repos/$GITHUB_ORG/$GITHUB_REPO/issues/$PR_NUMBER/comments"
+    curl -u "$GITHUB_SECRET" -d "$JSON" "$URL" || exit 1
+}
+
 # Publishes the docs for Jenkins or for a dev.
 function publish {
     [ -n "$JENKINS_URL" ] && activate_jenkins_env
@@ -564,7 +610,7 @@ TOPCMD="$1"
 shift
 
 case $TOPCMD in
-    internal_install|status|usage|setup|html|testy)
+    internal_install|status|usage|setup|html|testy|post_build_preview)
 	$TOPCMD "$@"
 	;;
 
