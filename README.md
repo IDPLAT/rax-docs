@@ -42,16 +42,17 @@ and changing some files. In case things go wrong or you change your
 mind, you'll use git to undo the changes, so you don't want other
 things in the way.
 
-1. Create a file in your project named `rax-docs`, and add the
-[content of the rax-docs
-script](https://github.com/IDPLAT/rax-docs/blob/master/rax-docs) to
-it. (GH Enterprise authentication means I can't make a simple wget
-command to get the script.)
+1. Download the main `rax-docs` script:
+    ```
+    wget -O rax-docs https://raw.githubusercontent.com/IDPLAT/rax-docs/master/rax-docs && \
+        chmod +x rax-docs
+    ````
 
-1. Install it. Find the [release](https://github.com/IDPLAT/rax-docs/releases) you want and use that as the version to install:
+1. Install the Toolkit. Find the
+[release](https://github.com/IDPLAT/rax-docs/releases) you want and
+use that as the version to install:
 
     ```
-    chmod +x rax-docs
     ./rax-docs install <version>
     ```
 
