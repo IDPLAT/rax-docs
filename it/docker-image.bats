@@ -93,4 +93,10 @@ function teardown {
 	echo "Check phrase: $PHRASE"
 	[[ "$output" =~ $PHRASE ]]
     done
+
+    # Make a failure
+    echo "Make splling check fail!" >> docs/contents.rst
+    run ./rax-docs test
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ Found\ 1\ misspelled\ words ]]
 }

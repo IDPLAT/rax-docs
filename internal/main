@@ -358,19 +358,6 @@ function setup {
     return 0
 }
 
-# Activates the build environment in Jenkins. This requires setup_jenkins to have run already, and it
-# takes the appropriate steps to make all the tools active that were installed by that function. This
-# is useful when a new stage of the build needs to use some of the installed tools because each
-# pipeline stage starts with a fresh environment.
-function activate_jenkins_env {
-    # shellcheck disable=SC1091
-    source /opt/rh/python27/enable || fail "Couldn't enable RHSCL Python 2.7"
-    # shellcheck disable=SC1091
-    source jenkinspy2/bin/activate || fail "Couldn't activate the venv"
-    PATH="$(pwd)/docs/bin:$PATH"
-    export PATH
-}
-
 # Sets up the Jenkins environment. This is heavily dependent on the Jenkins server where it's running and interdependent
 # with the Jenkinsfile that must, unfortunately, be part of each docs project. That defines the build stages. Expect this
 # sequence of calls:
@@ -403,6 +390,8 @@ function setup_jenkins {
     echo ""
 }
 
+# Sets up the dev environment, which consists of building a docker image that mimics the Jenkins that does the
+# authoritative doc build.
 function setup_user {
     echo "Setting up local dev environment"
     echo ""
@@ -410,6 +399,7 @@ function setup_user {
     docker build .rax-docs/repo/resources -t rax-docs
 }
 
+# Runs things in the dev docker image.
 function docker_run {
     docker image inspect rax-docs > /dev/null || {
 	echo "You need to set up your local environment first. Try running 'rax-docs setup'."
@@ -424,19 +414,52 @@ function docker_run {
                 -e OUTER_PWD="$PWD" \
                 -e PLEASE=true \
                 --user "$(id -u)":"$(id -g)" \
-                rax-docs "$@"
+                rax-docs "$@" || exit 1
 }
 
+# Runs make targets in the dev docker image.
 function docker_make {
     docker_run make -C /src/docs -f /src/.rax-docs/repo/resources/Makefile "$@"
 }
 
+# Activates the build environment in Jenkins. This requires setup_jenkins to have run already, and it
+# takes the appropriate steps to make all the tools active that were installed by that function. This
+# is useful when a new stage of the build needs to use some of the installed tools because each
+# pipeline stage starts with a fresh environment.
+function activate_jenkins_env {
+    # shellcheck disable=SC1091
+    source /opt/rh/python27/enable || fail "Couldn't enable RHSCL Python 2.7"
+    # shellcheck disable=SC1091
+    source jenkinspy2/bin/activate || fail "Couldn't activate the venv"
+    PATH="$(pwd)/docs/bin:$PATH"
+    export PATH
+}
+
+# Runs make targets on Jenkins.
+function jenkins_make {
+    activate_jenkins_env
+    OUTER_PWD="$PWD" PLEASE=true make -C "$PWD"/docs -f "$PWD"/.rax-docs/repo/resources/Makefile "$@" || exit 1
+}
+
+# Runs make targets in either Jenkins or Docker, depending on the environment we're running in.
+function do_make {
+    if [ -n "$JENKINS_URL" ]; then
+	jenkins_make "$@"
+    else
+	docker_make "$@"
+    fi
+}
+
 function html {
-    docker_make html
+    do_make html
+}
+
+function htmlvers {
+    do_make htmlvers
 }
 
 function testy {
-    docker_make test
+    do_make test
 }
 
 # Publishes the docs for Jenkins or for a dev.

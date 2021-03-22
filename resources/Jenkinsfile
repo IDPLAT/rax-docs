@@ -1,10 +1,14 @@
 #!/usr/bin/env groovy
+/**
+ * This file is installed and managed by the rax-docs toolkit.
+ */
 node {
 
     /**
      * The URL to clone. We'd like to discover this from the scm pipeline step, such as
      * via scmUrl = scm.getUserRemoteConfigs()[0].getUrl(), but permission is denied on
-     * Jenkins for that. Therefore we fall back to setting this during user installation.
+     * Jenkins for that. Therefore we fall back to setting this during installation of
+     * the rax-docs toolkit.
      */
     def gitCloneUrl = '{{GIT_CLONE_URL}}'
 

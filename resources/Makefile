@@ -11,13 +11,13 @@ ifdef JENKINS_URL
 # Running in Jenkins, so everything has to happen within the workspace
 styles_dir = styles
 temp_dir = ./
-template_path = .rax-docs/repo/resources/vale.ini.template
+resources_path = $(OUTER_PWD)/.rax-docs/repo/resources
 else
 # Running in Docker, so resources will be where they were installed in
 # the image
 styles_dir = /styles
 temp_dir = /tmp
-template_path = /src/.rax-docs/repo/resources/vale.ini.template
+resources_path = /src/.rax-docs/repo/resources
 endif
 
 .PHONY: clean html htmlvers spelling vale test
@@ -25,8 +25,7 @@ endif
 clean:
 	rm -rf _build/*
 
-test: spelling vale
-	doc8
+test: doc8 spelling vale
 	@echo "All tests completed"
 	@echo
 
@@ -35,9 +34,12 @@ html:
 	@echo "HTML finished. The pages are in $(OUTER_PWD)/docs/_build/html"
 	@echo
 
+doc8:
+	doc8 --config $(resources_path)/doc8.ini
+
 vale: html
 	TEMP=$$(mktemp --tmpdir=$(temp_dir)) && \
-	sed 's#{{styles_path}}#$(styles_dir)#' < $(template_path) > "$$TEMP" && \
+	sed 's#{{styles_path}}#$(styles_dir)#' < $(resources_path)/vale.ini.template > "$$TEMP" && \
 	vale --config "$$TEMP" _build/html/* | tee _build/vale_output.txt || true
 	@echo "Vale Finished. Output is in $(OUTER_PWD)/docs/_build/vale_output.txt"
 	@echo
