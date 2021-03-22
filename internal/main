@@ -101,9 +101,6 @@ function install_version_set {
 	DISCOVER_VERSION=false
     fi
     echo ""
-    OUTPUT=$(git -C .rax-docs/repo checkout "$CHOSEN_VERSION" 2>&1) || {
-	fail "Error checking out toolkit version:\n\n$OUTPUT"
-    }
     # Don't store a branch as the version. That would lead to non-reproducible builds due to
     # building based on a moving target version.
     git -C .rax-docs/repo show-ref --verify "refs/heads/$CHOSEN_VERSION" &> /dev/null && {
