@@ -204,6 +204,7 @@ Clone url : git url"
     [ "$status" -eq 0 ]
     [ -f .gitignore ]
     grep '^.rax-docs/repo$' .gitignore
+    grep '^.rax-docs/cache$' .gitignore
     [ -f Jenkinsfile ]
     JENKINS_CS=$(sha1sum < Jenkinsfile)
     ACTUAL_JENKINS_CS=$(sha1sum < .rax-docs/repo/resources/Jenkinsfile)
@@ -218,6 +219,21 @@ Clone url : git url"
     grep '^stuff already ignored$' .gitignore
     grep '^more stuff$' .gitignore
     grep '^.rax-docs/repo$' .gitignore
+}
+
+@test "doesn't add duplicate lines to .gitignore" {
+    # Given a normal install that adds our gitignore entries
+    run .rax-docs/repo/internal/main internal_install <<<"$ALL_YES"
+    [ "$status" -eq 0 ]
+    [ -f .gitignore ]
+    COUNT=$(grep -c '^.rax-docs/' .gitignore)
+    [ "$COUNT" = 2 ]
+    # When I install a second time
+    run .rax-docs/repo/internal/main internal_install <<<"$ALL_YES"
+    [ "$status" -eq 0 ]
+    # Then the gitignores shouldn't be duplicated
+    COUNT=$(grep -c '^.rax-docs/' .gitignore)
+    [ "$COUNT" = 2 ]
 }
 
 @test "installing over an installation succeeds" {
