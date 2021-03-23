@@ -27,6 +27,8 @@ function teardown {
     cat git-input
     echo "--- main input"
     cat main-input
+    echo "--- wget input"
+    cat wget-input
     echo "--- output"
     echo "$output"
     rm -rf "$TMPDIR"
@@ -97,12 +99,34 @@ function teardown {
     touch -d '3 weeks ago' rax-docs
     # and the toolkit is present
     mkdir -p .rax-docs/repo
-    # The update message waits for acknowledgement, so send an "enter"
-    run ./rax-docs banana <<<"$(printf "\n")"
-    [ "${lines[0]}" = "A new version of this script is available!" ]
+    # The update message offers to download the new version
+    run ./rax-docs banana <<<"$(printf "y\n")"
     # It fetched to update the local toolkit
     [[ "$(cat git-input)" =~ fetch\ --prune\ --tags ]]
     # After it fetched, it took the timestamp of the last change to
     # the script in the repo for comparison
     [[ "$(cat git-input)" =~ fetch.*log\ -1\ --pretty=format:%ci\ origin/master\ --\ rax-docs ]]
+    # It notified the user and did the update, since we answered "y"
+    [ "${lines[0]}" = "A new version of this script is available!" ]
+    EXPECTED="-O /tmp/.* https://raw.githubusercontent.com/IDPLAT/rax-docs/master/rax-doc"
+    [[ "$(cat wget-input)" =~ $EXPECTED ]]
+    # Then it proceeded with the requested command (which crashes hard here)
+    [ "${lines[-1]}" = "banana command ended badly" ]
+}
+
+@test "user can opt out of update" {
+    # Make it look like the last update check was 2 weeks ago
+    mkdir -p .rax-docs/cache
+    touch -d '2 weeks ago' .rax-docs/cache/update_check
+    # and the rax-docs script is 2 weeks old
+    touch -d '3 weeks ago' rax-docs
+    # and the toolkit is present
+    mkdir -p .rax-docs/repo
+    # The update message offers to download the new version
+    run ./rax-docs banana <<<"$(printf "n\n")"
+    # It notified the user, but didn't download anything and did the update, since we answered "y"
+    [ "${lines[0]}" = "A new version of this script is available!" ]
+    [ ! -f wget-input ]
+    # Then it proceeded with the requested command (which crashes hard here)
+    [ "${lines[-1]}" = "banana command ended badly" ]
 }
