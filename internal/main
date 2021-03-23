@@ -510,8 +510,24 @@ function post_build_preview {
 
 # Publishes the docs for Jenkins or for a dev.
 function publish {
-    [ -n "$JENKINS_URL" ] && activate_jenkins_env
-    echo "where does publish live? in docker? or just here, like it is in fe lambda?"
+    if [ -n "$JENKINS_URL" ]; then
+	activate_jenkins_env
+	MESSAGE="Test, build, and publish with Jenkins (build # $BUILD_NUMBER)"
+    else
+	MESSAGE="Manually published by $USER"
+    fi
+    git worktree add dragons gh-pages
+    rm -rf dragons/*
+    rsync -a docs/_build/html/ dragons/
+    cd dragons
+    touch .nojekyll
+    git add .
+    git commit -m "$MESSAGE"
+    git push origin gh-pages
+    cd -
+    # Can't use `worktree remove` until a newer version of git is available on Jenkins
+    rm -rf dragons/
+    git worktree prune -v
 }
 
 function usage {
