@@ -47,7 +47,7 @@ node {
     if (isPr) {
         stage ('Stage preview HTML') {
             withCredentials([usernameColonPassword(credentialsId: 'SVCwPAT', variable: 'GITHUB_SECRET')]) {
-	        sh 'PR_NUMBER=$numberPR ./rax-docs post_build_preview'
+	        sh './rax-docs post_build_preview'
             }
 	}
     } else {
