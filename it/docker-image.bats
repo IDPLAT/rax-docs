@@ -41,7 +41,7 @@ function teardown {
 @test "the image has python installed" {
     run docker run --rm rax-docs python --version
     # This is the python version matching Jenkins
-    [ "$output" = "Python 2.7.13" ]
+    [ "$output" = "Python 3.3.6" ]
 }
 
 @test "the image has a pip that works with python 2" {

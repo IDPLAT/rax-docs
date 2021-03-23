@@ -368,10 +368,10 @@ function setup_jenkins {
     echo "Setting up Jenkins build environment"
     echo ""
     # shellcheck disable=SC1091
-    source /opt/rh/python27/enable || fail "Couldn't enable RHSCL Python 2.7"
-    virtualenv jenkinspy2 || fail "Couldn't create the venv to contain this build"
+    source /opt/rh/python33/enable || fail "Couldn't enable RHSCL Python 2.7"
+    virtualenv jenkinspy || fail "Couldn't create the venv to contain this build"
     # shellcheck disable=SC1091
-    source jenkinspy2/bin/activate || fail "Couldn't activate the new venv"
+    source jenkinspy/bin/activate || fail "Couldn't activate the new venv"
     python -V
     # This is the latest version of pip that still works with python 2.7. Can't go any further until this moves to 3.
     pip install --upgrade pip\<21 || fail "Couldn't upgrade pip to latest version"
@@ -428,9 +428,9 @@ function docker_make {
 # pipeline stage starts with a fresh environment.
 function activate_jenkins_env {
     # shellcheck disable=SC1091
-    source /opt/rh/python27/enable || fail "Couldn't enable RHSCL Python 2.7"
+    source /opt/rh/python33/enable || fail "Couldn't enable RHSCL Python 2.7"
     # shellcheck disable=SC1091
-    source jenkinspy2/bin/activate || fail "Couldn't activate the venv"
+    source jenkinspy/bin/activate || fail "Couldn't activate the venv"
     PATH="$(pwd)/docs/bin:$PATH"
     export PATH
 }
