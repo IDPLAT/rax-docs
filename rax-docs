@@ -36,11 +36,10 @@ function install {
         echo "$OUTPUT"
         exit 1
     }
-    VERSION="${1:-master}"
-    OUTPUT=$(git -C .rax-docs/repo checkout "$VERSION" 2>&1) || {
+    [ -z "$1" ] || OUTPUT=$(git -C .rax-docs/repo checkout "$1" 2>&1) || {
 	echo "Error checking out requested version."
 	echo ""
-	echo "The version you requested ($VERSION) isn't a valid git treeish."
+	echo "The version you requested ($1) isn't a valid git treeish."
 	echo "You need to specify a tag, branch, or commit hash to install."
 	echo ""
 	echo "$OUTPUT"

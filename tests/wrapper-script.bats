@@ -57,6 +57,14 @@ function teardown {
     [ "$(cat main-input)" = "internal_install some-version" ]
 }
 
+@test "installing with no version doesn't try to check out because it means latest" {
+    run ./rax-docs install <<<"$(printf "y\ny\ny\ny\ny\ny\ny\n")"
+    [ "${lines[-1]}" = "install command completed" ]
+    [ $status -eq 0 ]
+    [ "$(cat git-input)" = "clone https://github.com/IDPLAT/rax-docs.git .rax-docs/repo" ]
+    [ "$(cat main-input)" = "internal_install" ]
+}
+
 @test "install passes all args to internal script" {
     run ./rax-docs install foo bar baz abc xyz <<<"$(printf "y\ny\ny\ny\ny\ny\ny\n")"
     [ "$(cat main-input)" = "internal_install foo bar baz abc xyz" ]
