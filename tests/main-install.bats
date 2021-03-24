@@ -234,6 +234,16 @@ Clone url : git url"
     # Then the gitignores shouldn't be duplicated
     COUNT=$(grep -c '^.rax-docs/' .gitignore)
     [ "$COUNT" = 2 ]
+    # When the gitignore has other entries in it
+    echo "more entries" >> .gitignore
+    # And I install again
+    run .rax-docs/repo/internal/main internal_install <<<"$ALL_YES"
+    [ "$status" -eq 0 ]
+    # Then the entries still aren't duplicated
+    COUNT=$(grep -c '^.rax-docs/' .gitignore)
+    [ "$COUNT" = 2 ]
+    # And the new entry is still there
+    grep '^more entries$' .gitignore
 }
 
 @test "installing over an installation succeeds" {

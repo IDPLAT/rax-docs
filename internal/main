@@ -296,10 +296,10 @@ function install_go {
     }
     IGNORE="# Ignore rax-docs installation. It should be pulled with './rax-docs get' when needed.\n.rax-docs/repo\n"
     IGNORE+="# Ignore rax-docs cache dir, where info specific to the local installation is stored.\n.rax-docs/cache"
-    if [ -f .gitignore ] && ! grep '^.rax-docs/repo' .gitignore > /dev/null; then
-	echo -e "\n$IGNORE" >> .gitignore
-    else
+    if ! [ -f .gitignore ]; then
 	echo -e "$IGNORE" > .gitignore
+    elif ! grep '^.rax-docs/repo' .gitignore > /dev/null; then
+	echo -e "\n$IGNORE" >> .gitignore
     fi
     install_all_done
 }
