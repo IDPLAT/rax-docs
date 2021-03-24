@@ -65,3 +65,30 @@ function teardown {
     [ "$(head -1 docker-input)" = "rmi rax-docs:latest" ]
     [ "$(tail -1 docker-input)" = "build .rax-docs/repo/resources -t rax-docs" ]
 }
+
+@test "'test' runs tests in docker via make" {
+    run ./rax-docs test
+    [ "$status" -eq 0 ]
+    # First, a check to ensure the dev environment is set up
+    [ "$(head -1 docker-input)" = "image inspect rax-docs" ]
+    # Then, html runs through docker using the makefile
+    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs\ make\ .*\ test$ ]]
+}
+
+@test "'html' builds html in docker via make" {
+    run ./rax-docs html
+    [ "$status" -eq 0 ]
+    # First, a check to ensure the dev environment is set up
+    [ "$(head -1 docker-input)" = "image inspect rax-docs" ]
+    # Then, html runs through docker using the makefile
+    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs\ make\ .*\ html$ ]]
+}
+
+@test "'htmlvers' builds versioned html in docker via make" {
+    run ./rax-docs htmlvers
+    [ "$status" -eq 0 ]
+    # First, a check to ensure the dev environment is set up
+    [ "$(head -1 docker-input)" = "image inspect rax-docs" ]
+    # Then, html runs through docker using the makefile
+    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs\ make\ .*\ htmlvers$ ]]
+}
