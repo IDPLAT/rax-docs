@@ -263,7 +263,7 @@ Clone url : git url"
     [ "$status" -eq 0 ]
     # The legacy tools should be removed.
     [ ! -f Makefile ]
-    [ ! -f tox.ini ]
+    [ ! -f requirements.txt ]
     [ ! -d scripts ]
     [ ! -f test.sh ]
     [ ! -f Pipfile ]
@@ -279,8 +279,8 @@ function make_starter_kit_files {
     # key commands. See the script for specifics.
     touch Makefile
     mkdir docs
+    touch requirements.txt
     touch docs/Makefile
-    touch tox.ini
     echo "source /opt/rh/rh-git29/enable" > Jenkinsfile
     mkdir scripts
     echo "source jenkinspy2/bin/activate" > scripts/build.sh
