@@ -205,8 +205,8 @@ function install_check_old_files {
     SIGNATURE_FILES=(
 	Jenkinsfile
 	Makefile
+	requirements.txt
 	docs/Makefile
-	tox.ini
     )
     SIGNATURE_MATCH=true
     for F in "${SIGNATURE_FILES[@]}"; do
