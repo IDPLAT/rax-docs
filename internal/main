@@ -430,7 +430,7 @@ function setup_jenkins {
     # shellcheck disable=SC1091
     source rax-docs-venv/bin/activate
     pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install -r .rax-docs/repo/resources/requirements.txt
 
     echo ""
     echo "Install vale style checker"
