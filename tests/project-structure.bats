@@ -53,3 +53,9 @@
 	[ -f "$BATS_TEST_DIRNAME/$NAME.bats" ]
     done
 }
+
+@test "Docker and Jenkins Python versions match" {
+    FROM_LINE=$(head -1 resources/Dockerfile)
+    VERSION=$(echo "$FROM_LINE" | cut -d : -f 2)
+    grep "^PYVERSION=$VERSION\$" internal/main
+}
