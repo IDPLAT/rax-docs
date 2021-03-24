@@ -1,0 +1,16 @@
+#!/bin/bash -e
+
+# Stubs out wget for tests. We use this to verify the wrapper script
+# auto-update behavior without actually downloading a new version of
+# the script, which would interfere with the tests.
+echo "$@" >> wget-input
+
+# When called, it's told to put the wrapper script into a temp file.
+# To keep tests happy, just copy the current script into that file.
+[ "$1" = -O ] || {
+    echo "Test fixture out of date with script."
+    echo "Expected first option to be the output file."
+    exit 1
+}
+TEMPFILE="$2"
+cp rax-docs "$TEMPFILE"

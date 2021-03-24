@@ -134,12 +134,28 @@ function update_check {
 	if [ "$MY_TS" -lt "$THEIR_TS" ]; then
 	    echo "A new version of this script is available!"
 	    echo ""
-	    echo "It may have bugfixes or new features available. You should"
-	    echo "consider trying it out by grabbing it from"
-	    echo "https://github.com/IDPLAT/rax-docs"
+	    echo "It may have bugfixes or new features available."
 	    echo ""
-	    read -rp "Press the any key to continue " -n1
-	    [ "$REPLY" = "" ] || echo ""
+	    read -rp "Update now? [Y/n] "
+	    if [ -z "$REPLY" ] || [[ "$REPLY" =~ ^[Yy].* ]]; then
+		# Download to a temp location and then switch files
+		# around. This is to hopefully prevent bash from
+		# reloading the script immediately, which would likely
+		# fail.
+		TMP=$(mktemp)
+		OUTPUT=$(wget -O "$TMP" https://raw.githubusercontent.com/IDPLAT/rax-docs/master/rax-docs 2>&1) || {
+		    echo "Oops, downloading the latest version failed. Try again later!"
+		    echo ""
+		    echo "$OUTPUT"
+		    echo ""
+		    return 0
+		}
+		chmod --reference=rax-docs "$TMP"
+		mv rax-docs "$TMP.old"
+		mv "$TMP" rax-docs
+		echo ""
+		echo "Thanks for updating! Don't forget to commit the new script!"
+	    fi
 	    echo ""
 	fi
     fi
