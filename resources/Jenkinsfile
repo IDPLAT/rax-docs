@@ -52,6 +52,7 @@ node {
 	}
     } else {
         stage("Release stuff") {
+            sh './rax-docs htmlvers'
             sh './rax-docs publish'
         }
     }
