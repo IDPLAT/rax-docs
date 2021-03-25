@@ -574,7 +574,7 @@ function publish {
     else
 	MESSAGE="Manually published by $USER"
     fi
-    git worktree add dragons gh-pages || fail "Failed to add worktree for publishing to gh-pages"
+    git worktree add dragons origin/gh-pages || fail "Failed to add worktree for publishing to gh-pages"
     rm -rf dragons/*
     rsync -a docs/_build/html/ dragons/
     cd dragons || fail "Failed to switch to worktree dir for publishing"
