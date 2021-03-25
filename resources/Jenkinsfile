@@ -20,7 +20,7 @@ node {
     /**
      * True if this is a PR build.
      */
-    def isPr = !env.CHANGE_BRANCH.isEmpty()
+    def isPr = !env.CHANGE_BRANCH?.isEmpty()
 
     stage ('Gather intel') {
         sh 'lsb_release -a'
