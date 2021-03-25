@@ -581,7 +581,7 @@ function publish {
     touch .nojekyll
     git add .
     git commit -m "$MESSAGE" || fail "Failed to commit new published version"
-    git push origin gh-pages || fail "Pushing new content to gh-pages failed"
+    git push origin HEAD:gh-pages || fail "Pushing new content to gh-pages failed"
     cd - || fail "Failed to switch out of worktree dir to clean up publishing"
     # Can't use `worktree remove` until a newer version of git is available on Jenkins
     rm -rf dragons/
