@@ -684,7 +684,7 @@ TOPCMD="$1"
 shift
 
 case $TOPCMD in
-    internal_install|status|usage|setup|html|htmlvers|testy|post_build_preview)
+    internal_install|status|usage|setup|html|htmlvers|testy|post_build_preview|publish)
 	$TOPCMD "$@"
 	;;
 
