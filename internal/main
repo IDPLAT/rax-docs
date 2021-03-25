@@ -574,15 +574,15 @@ function publish {
     else
 	MESSAGE="Manually published by $USER"
     fi
-    git worktree add dragons gh-pages
+    git worktree add dragons gh-pages || fail "Failed to add worktree for publishing to gh-pages"
     rm -rf dragons/*
     rsync -a docs/_build/html/ dragons/
-    cd dragons
+    cd dragons || fail "Failed to switch to worktree dir for publishing"
     touch .nojekyll
     git add .
-    git commit -m "$MESSAGE"
-    git push origin gh-pages
-    cd -
+    git commit -m "$MESSAGE" || fail "Failed to commit new published version"
+    git push origin gh-pages || fail "Pushing new content to gh-pages failed"
+    cd - || fail "Failed to switch out of worktree dir to clean up publishing"
     # Can't use `worktree remove` until a newer version of git is available on Jenkins
     rm -rf dragons/
     git worktree prune -v
