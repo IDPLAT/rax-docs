@@ -482,6 +482,8 @@ function docker_make {
 # is useful when a new stage of the build needs to use some of the installed tools because each
 # pipeline stage starts with a fresh environment.
 function activate_jenkins_env {
+    # shellcheck disable=SC1091
+    source /opt/rh/rh-git29/enable || fail "Failed to activate latest git on Jenkins."
     PATH="$PYENV_ROOT/bin:$PATH"
     pyenv local "$PYVERSION" || fail "Couldn't activate Python $PYVERSION"
     eval "$(pyenv init -)" || fail "Couldn't init pyenv"
