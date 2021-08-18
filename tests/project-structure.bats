@@ -29,11 +29,9 @@
     cd "$PROJECTDIR"
     for FILE in *; do
 	echo "Check file: $FILE"
-	# readme, of course
-	[ "$FILE" = "README.md" ] ||
-	    # the wrapper script that people need to download; top
-	    # level for ease of access
-	    [ "$FILE" = "rax-docs" ] ||
+	# the wrapper script that people need to download; top
+	# level for ease of access
+	[ "$FILE" = "rax-docs" ] ||
 	    # directory containing internal scripts
 	    [ "$FILE" = "internal" ] ||
 	    # directory containing additional resources, not script/source files
@@ -41,7 +39,11 @@
 	    # directory containing unit tests
 	    [ "$FILE" = "tests" ] ||
 	    # directory containing integration tests
-	    [ "$FILE" = "it" ]
+	    [ "$FILE" = "it" ] ||
+	    # top-level documentation stuff
+	    [ "$FILE" = "README.md" ] ||
+	    [ "$FILE" = "CONTRIBUTING.md" ]
+
     done
 }
 
