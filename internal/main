@@ -450,13 +450,32 @@ function setup_jenkins {
 function setup_user {
     echo "Setting up local dev environment"
     echo ""
-    docker rmi rax-docs:latest > /dev/null 2>&1 || true
-    docker build .rax-docs/repo/resources -t rax-docs
+    # shellcheck disable=SC1091
+    if ! source .rax-docs/config/bash || [ -z "$TOOLKIT_VERSION" ]; then
+	echo "Missing version from config file."
+	echo ""
+	echo "If you installed the toolkit property, there should be a config"
+	echo "file at .rax-docs/config/bash that sets a variable named"
+	echo "TOOLKIT_VERSION. Something appears to be wrong with your installation."
+	exit 1
+    fi
+    docker build .rax-docs/repo/resources -t rax-docs:"$TOOLKIT_VERSION"
 }
 
 # Runs things in the dev docker image.
 function docker_run {
-    docker image inspect rax-docs > /dev/null || {
+    # Only use a specifically tagged version of the image. This will prevent weird things from happening if someone
+    # works on multiple docs repos with different toolkit versions in them.
+    # shellcheck disable=SC1091
+    if ! source .rax-docs/config/bash || [ -z "$TOOLKIT_VERSION" ]; then
+	echo "Missing version from config file."
+	echo ""
+	echo "If you installed the toolkit property, there should be a config"
+	echo "file at .rax-docs/config/bash that sets a variable named"
+	echo "TOOLKIT_VERSION. Something appears to be wrong with your installation."
+	exit 1
+    fi
+    docker image inspect rax-docs:"$TOOLKIT_VERSION" > /dev/null || {
 	echo "You need to set up your local environment first. Try running 'rax-docs setup'."
 	exit 1
     }
@@ -469,7 +488,7 @@ function docker_run {
                 -e OUTER_PWD="$PWD" \
                 -e PLEASE=true \
                 --user "$(id -u)":"$(id -g)" \
-                rax-docs "$@" || exit 1
+                rax-docs:"$TOOLKIT_VERSION" "$@" || exit 1
 }
 
 # Runs make targets in the dev docker image.

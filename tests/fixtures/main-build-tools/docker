@@ -5,7 +5,4 @@
 # exists, waiting for it to be built, etc.
 
 echo "$@" >> docker-input
-# The "docker rmi rax-docs:latest" during setup is optional. If it
-# fails, the script should continue.
-[ "$1" = "rmi" ] && exit 1
 exit 0

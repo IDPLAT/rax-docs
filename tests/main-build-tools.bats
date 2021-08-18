@@ -16,7 +16,8 @@ function setup {
     PATH="$TMPDIR":$PATH
     # The project has the local version of the toolkit in it
     cp rax-docs "$TMPDIR"
-    mkdir -p "$TMPDIR"/.rax-docs
+    mkdir -p "$TMPDIR"/.rax-docs/config
+    echo "TOOLKIT_VERSION=bob" > "$TMPDIR"/.rax-docs/config/bash
     cp -r ./ "$TMPDIR"/.rax-docs/repo/
     cd "$TMPDIR" || exit 1
 }
@@ -60,35 +61,44 @@ function teardown {
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "Setting up local dev environment" ]
     [ "${lines[-1]}" = "setup command completed" ]
-    # The old image is removed, if present, and a fresh one is built
-    # from the toolkit's Dockerfile
-    [ "$(head -1 docker-input)" = "rmi rax-docs:latest" ]
-    [ "$(tail -1 docker-input)" = "build .rax-docs/repo/resources -t rax-docs" ]
+    # It builds an imaged tagged with the toolkit version from the config file.
+    [ "$(cat docker-input)" = "build .rax-docs/repo/resources -t rax-docs:bob" ]
 }
 
 @test "'test' runs tests in docker via make" {
     run ./rax-docs test
     [ "$status" -eq 0 ]
-    # First, a check to ensure the dev environment is set up
-    [ "$(head -1 docker-input)" = "image inspect rax-docs" ]
-    # Then, html runs through docker using the makefile
-    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs\ make\ .*\ test$ ]]
+    # First, a check to ensure the right version of the dev environment is set up
+    [ "$(head -1 docker-input)" = "image inspect rax-docs:bob" ]
+    # Then, it runs the command through docker using the makefile
+    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs:bob\ make\ .*\ test$ ]]
 }
 
 @test "'html' builds html in docker via make" {
     run ./rax-docs html
     [ "$status" -eq 0 ]
-    # First, a check to ensure the dev environment is set up
-    [ "$(head -1 docker-input)" = "image inspect rax-docs" ]
-    # Then, html runs through docker using the makefile
-    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs\ make\ .*\ html$ ]]
+    # First, a check to ensure the right version of the dev environment is set up
+    [ "$(head -1 docker-input)" = "image inspect rax-docs:bob" ]
+    # Then, it runs the command through docker using the makefile
+    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs:bob\ make\ .*\ html$ ]]
 }
 
 @test "'htmlvers' builds versioned html in docker via make" {
     run ./rax-docs htmlvers
     [ "$status" -eq 0 ]
-    # First, a check to ensure the dev environment is set up
-    [ "$(head -1 docker-input)" = "image inspect rax-docs" ]
-    # Then, html runs through docker using the makefile
-    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs\ make\ .*\ htmlvers$ ]]
+    # First, a check to ensure the right version of the dev environment is set up
+    [ "$(head -1 docker-input)" = "image inspect rax-docs:bob" ]
+    # Then, it runs the command through docker using the makefile
+    [[ "$(tail -1 docker-input)" =~ ^run\ .*\ rax-docs:bob\ make\ .*\ htmlvers$ ]]
+}
+
+@test "running a command without the dev environment built gives good output" {
+    # Simulate a "docker inspect" failure with the docker test fixture
+    echo 'echo "$@" > docker-input' > ./docker
+    echo '[[ "$@" =~ "image inspect" ]] && exit 1' >> ./docker
+    run ./rax-docs html
+    [ "$status" -eq 1 ]
+    [[ "${lines[0]}" =~ "You need to set up your local environment first" ]]
+    # Nothing but the inspect should have run
+    [ "$(cat docker-input)" = "image inspect rax-docs:bob" ]
 }
