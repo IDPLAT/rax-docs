@@ -28,8 +28,12 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip\<21
 RUN pip install -r requirements.txt
 
-run wget https://install.goreleaser.com/github.com/ValeLint/vale.sh && \
-    sh vale.sh -b /usr/local/bin v2.4.0 && \
+ARG VALE_VERSION=2.4.0
+
+run wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz && \
+    mkdir /usr/local/lib/vale-${VALE_VERSION} && \
+    tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/lib/vale-${VALE_VERSION} && \
+    ln -s /usr/local/lib/vale-${VALE_VERSION}/vale /usr/local/bin/vale && \
     mkdir -p styles/Vocab && \
     git clone https://github.com/achatur/docs-vale.git styles/docs-vale && \
     git clone https://github.com/errata-ai/Google.git styles/Google && \
