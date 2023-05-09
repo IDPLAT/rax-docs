@@ -200,3 +200,17 @@ value to skip tests that build a new image.
 
 See the `tests` and `it` directories for further details on the unit
 and integration tests, respectively.
+
+Releasing a new version
+=======================
+
+When you're ready to release a new version. Just tag the current master.
+```
+git tag <new_tag>
+``` 
+Be sure to create the tag following the existing conventions. After the tag has 
+been created, go ahead and push it up. 
+```
+git push origin <new_tag>
+```
+A github action will kick off and generate a release based on the new tag.
