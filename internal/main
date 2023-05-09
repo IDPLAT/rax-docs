@@ -443,7 +443,7 @@ function setup_jenkins {
     # We don't have privileges outside the Jenkins workspace, so we just install the vale script to docs/bin
     # and the styles to docs/styles. They'll be reinstalled for every new build.
     wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz || fail "Couldn't download Vale script"
-    mkdir docs/lib/vale-${VALE_VERSION} || fail "Couldn't make the vale lib dir"
+    mkdir -p docs/lib/vale-${VALE_VERSION} || fail "Couldn't make the vale lib dir"
     tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C docs/lib/vale-${VALE_VERSION} || fail "Couldn't untar vale to docs/lib"
     ln -s docs/lib/vale-${VALE_VERSION}/vale docs/bin/vale || fail "Couldn't link the vale executable to docs/bin"
     mkdir -p docs/styles/Vocab || fail "Couldn't make the docs/styles/Vocab dir"
