@@ -28,7 +28,7 @@ pluggy==0.8.0
 ply==3.11
 py==1.7.0
 pyenchant==2.0.0
-pygments==2.2.0
+pygments==2.20.0
 pyparsing==2.2.2
 pytz==2018.7
 recommonmark==0.4.0
