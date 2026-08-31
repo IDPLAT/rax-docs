@@ -17,7 +17,7 @@ filelock==3.0.9
 idna==2.7
 imagesize==1.1.0
 jinja2==2.10
-markdown==3.0.1
+markdown==3.8.1
 markupsafe==1.1.1
 packaging==18.0
 pandoc==1.0.2
